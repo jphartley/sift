@@ -1,0 +1,44 @@
+# Xcode
+*.xcuserdata
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+xcuserdata/
+xcshareddata/
+*.xcscheme
+
+# Build
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.app
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+*.DS_Store
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+
+# App Store Connect
+*.pkg
+*.ipa
+
+# Swift
+*.swiftpm/
+
+# Playgrounds
+playground.xcworkspace

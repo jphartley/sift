@@ -1,24 +1,23 @@
-//
-//  ContentView.swift
-//  sift
-//
-//  Created by Jeremy Hartley on 03/05/2026.
-//
-
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            RecordingScreen()
+                .tabItem {
+                    Label("Record", systemImage: "mic.fill")
+                }
+
+            HistoryScreen()
+                .tabItem {
+                    Label("History", systemImage: "list.bullet.rectangle")
+                }
         }
-        .padding()
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(for: Session.self, inMemory: true)
 }
