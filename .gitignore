@@ -3,7 +3,7 @@
 *.xcworkspace/xcuserdata/
 *.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 xcuserdata/
-xcshareddata/
+xcshareddata/*
 !xcshareddata/xcschemes/
 
 # Build
