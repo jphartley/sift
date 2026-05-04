@@ -1,0 +1,143 @@
+## ADDED Requirements
+
+### Requirement: PracticeLibrary keyword matching returns ranked results
+
+The system SHALL have automated tests verifying that `Practice.match(transcript:)` correctly ranks practices by keyword match count.
+
+#### Scenario: Empty transcript returns all practices with zero score
+- **WHEN** the match function receives an empty string
+- **THEN** all practices SHALL appear in the result array with a score of zero
+
+#### Scenario: Single keyword matches one practice
+- **WHEN** the transcript contains only the word "breath"
+- **THEN** Box Breathing and 4-7-8 Breathing SHALL rank highest (both have "breath" as a keyword)
+
+#### Scenario: Short words are ignored
+- **WHEN** the transcript contains only words of 2 or fewer characters
+- **THEN** all practices SHALL score zero
+
+#### Scenario: Multiple keywords compound scoring
+- **WHEN** the transcript contains "anxious stressed tense"
+- **THEN** practices with more matching keywords SHALL rank higher than practices with fewer
+
+### Requirement: Practice library data is valid
+
+The system SHALL have automated tests verifying the integrity of the curated practice library.
+
+#### Scenario: All practices have unique IDs
+- **WHEN** the practice library is loaded
+- **THEN** no two practices SHALL share the same id
+
+#### Scenario: All practices have non-empty keywords
+- **WHEN** the practice library is loaded
+- **THEN** every practice SHALL have at least one keyword
+
+#### Scenario: All practices have positive duration
+- **WHEN** the practice library is loaded
+- **THEN** every practice SHALL have durationMinutes greater than zero
+
+### Requirement: Session model initializes correctly
+
+The system SHALL have automated tests verifying Session model defaults.
+
+#### Scenario: Default initializer sets empty attempts
+- **WHEN** a Session is initialized with default parameters
+- **THEN** attempts SHALL be an empty array
+
+#### Scenario: Custom initializer preserves values
+- **WHEN** a Session is initialized with specific transcript and duration
+- **THEN** transcript and audioDuration SHALL match the provided values
+
+### Requirement: PracticeAttempt model initializes correctly
+
+The system SHALL have automated tests verifying PracticeAttempt model defaults.
+
+#### Scenario: Default initializer sets completed to true
+- **WHEN** a PracticeAttempt is initialized with default parameters
+- **THEN** completed SHALL be true and wasHelpful SHALL be nil
+
+#### Scenario: Custom wasHelpful and notes are preserved
+- **WHEN** a PracticeAttempt is initialized with wasHelpful true and notes "felt calm after"
+- **THEN** wasHelpful SHALL be true and notes SHALL be "felt calm after"
+
+### Requirement: RecordingState enum cases are distinct
+
+The system SHALL have automated tests verifying RecordingState enum equality.
+
+#### Scenario: Same state cases are equal
+- **WHEN** two RecordingState values are .ready
+- **THEN** they SHALL be equal
+
+#### Scenario: Different state cases are not equal
+- **WHEN** one value is .ready and another is .recording
+- **THEN** they SHALL NOT be equal
+
+#### Scenario: Associated values affect equality
+- **WHEN** two .suggesting states have different transcripts
+- **THEN** they SHALL NOT be equal
+
+### Requirement: TranscriptionError provides descriptive messages
+
+The system SHALL have automated tests verifying TranscriptionError localized descriptions.
+
+#### Scenario: Model not loaded error message
+- **WHEN** TranscriptionError.modelNotLoaded is queried for errorDescription
+- **THEN** it SHALL return a non-empty string
+
+#### Scenario: File not found error message
+- **WHEN** TranscriptionError.fileNotFound is queried for errorDescription
+- **THEN** it SHALL return a non-empty string
+
+### Requirement: RecordingViewModel transitions through states correctly
+
+The system SHALL have automated tests verifying the ViewModel state machine using in-memory SwiftData.
+
+#### Scenario: logPractice creates attempt and transitions to reflecting
+- **WHEN** a pending Session exists and logPractice is called with a practice ID and name
+- **THEN** the state SHALL be .reflecting with the practice name
+- **THEN** the Session's attempts array SHALL contain one PracticeAttempt
+
+#### Scenario: completeReflection persists session and resets state
+- **WHEN** a pending Session exists, an attempt has been logged, and completeReflection is called with wasHelpful true
+- **THEN** the state SHALL transition to .ready
+- **THEN** the Session SHALL be persisted to the in-memory context
+- **THEN** the PracticeAttempt's wasHelpful SHALL be true
+
+#### Scenario: skipSuggestions persists empty session
+- **WHEN** a pending Session exists with no attempts and skipSuggestions is called
+- **THEN** the state SHALL transition to .ready
+- **THEN** the Session SHALL be persisted with an empty attempts array
+
+#### Scenario: dismissPractice returns to suggesting
+- **WHEN** a pending Session exists with one attempt logged and dismissPractice is called
+- **THEN** the state SHALL transition to .suggesting
+- **THEN** the Session's attempts SHALL be cleared
+
+### Requirement: Practice ranking boosts previously helpful practices
+
+The system SHALL have automated tests verifying that practices previously marked helpful receive a ranking bonus.
+
+#### Scenario: Previously helpful practice ranks above equal match
+- **WHEN** a PracticeAttempt with wasHelpful true exists for Box Breathing
+- **AND** the transcript matches Box Breathing and 4-7-8 Breathing equally
+- **THEN** Box Breathing SHALL rank above 4-7-8 Breathing
+
+#### Scenario: No helpful history gives no bonus
+- **WHEN** no PracticeAttempts exist
+- **THEN** practice ranking SHALL depend solely on keyword match count
+
+### Requirement: SwiftData relationship cascade deletes attempts
+
+The system SHALL have automated tests verifying that deleting a Session cascades to its PracticeAttempts.
+
+#### Scenario: Deleting session removes its attempts
+- **WHEN** a Session with two PracticeAttempts is inserted and then deleted
+- **THEN** fetching all PracticeAttempts SHALL return an empty array
+
+### Requirement: FetchDescriptor predicate filters correctly
+
+The system SHALL have automated tests verifying SwiftData predicate queries.
+
+#### Scenario: wasHelpful predicate returns only helpful attempts
+- **WHEN** one PracticeAttempt has wasHelpful true and another has wasHelpful false
+- **THEN** fetching with predicate wasHelpful == true SHALL return exactly one result
