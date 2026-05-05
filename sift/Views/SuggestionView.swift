@@ -11,47 +11,50 @@ struct SuggestionView: View {
     let onSkip: () -> Void
 
     @State private var showEscalatedToast = false
+    @State private var expandedID: String? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("You shared")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(transcript)
-                    .font(.body)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("You shared")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(transcript)
+                        .font(.body)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Analysis")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(rationale)
-                    .font(.body)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Analysis")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(rationale)
+                        .font(.body)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
 
-            Text("Try one of these")
-                .font(.headline)
+                Text("Try one of these")
+                    .font(.headline)
 
-            ForEach(practices) { practice in
-                practiceCard(practice)
-            }
+                ForEach(practices) { practice in
+                    practiceCard(practice)
+                }
 
-            Button("Done") {
-                onSkip()
+                Button("Done") {
+                    onSkip()
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
-            .frame(maxWidth: .infinity)
+            .padding()
         }
-        .padding()
         .onAppear {
             if wasEscalated {
                 showEscalatedToast = true
@@ -77,8 +80,12 @@ struct SuggestionView: View {
     }
 
     private func practiceCard(_ practice: Practice) -> some View {
-        Button {
-            onSelect(practice)
+        let isExpanded = expandedID == practice.id
+
+        return Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                expandedID = isExpanded ? nil : practice.id
+            }
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -87,6 +94,9 @@ struct SuggestionView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("~\(practice.durationMinutes)m")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -109,14 +119,24 @@ struct SuggestionView: View {
                 Text(practice.description)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(isExpanded ? nil : 2)
 
-                if let relevance = relevanceByID[practice.id] {
+                if isExpanded, let relevance = relevanceByID[practice.id] {
                     Text(relevance)
                         .font(.caption)
                         .foregroundStyle(.indigo)
-                        .lineLimit(3)
                         .padding(.top, 4)
+                }
+
+                if isExpanded {
+                    Button {
+                        onSelect(practice)
+                    } label: {
+                        Text("Try This")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.top, 8)
                 }
             }
             .padding()

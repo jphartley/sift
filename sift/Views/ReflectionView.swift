@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ReflectionView: View {
     let practiceName: String
+    let practiceDescription: String
+    let relevance: String
     let onSave: (Bool?, String?) -> Void
     let onDismiss: () -> Void
 
@@ -22,6 +24,32 @@ struct ReflectionView: View {
 
     private var tryQuestion: some View {
         VStack(spacing: 24) {
+            HStack {
+                Button("Back") {
+                    onDismiss()
+                }
+                .font(.subheadline)
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text(practiceName)
+                    .font(.headline)
+
+                Text(practiceDescription)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if !relevance.isEmpty {
+                    Text(relevance)
+                        .font(.caption)
+                        .foregroundStyle(.indigo)
+                        .padding(.top, 2)
+                }
+
+                Divider()
+            }
+
             Text("Did you try \(practiceName)?")
                 .font(.title3)
 

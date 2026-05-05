@@ -39,4 +39,22 @@ struct RecordingStateTests {
         let b = RecordingState.suggesting(transcript: "hello", practices: [], rationale: "test", wasEscalated: false, relevanceByID: [:])
         #expect(a == b)
     }
+
+    @Test func reflectingWithSameValuesAreEqual() async {
+        let a = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Breathe in", relevance: "Relevant")
+        let b = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Breathe in", relevance: "Relevant")
+        #expect(a == b)
+    }
+
+    @Test func reflectingWithDifferentValuesAreNotEqual() async {
+        let a = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Breathe in", relevance: "Relevant")
+        let b = RecordingState.reflecting(practiceName: "Body Scan", practiceDescription: "Scan your body", relevance: "Different")
+        #expect(a != b)
+    }
+
+    @Test func reflectingNotEqualToSuggesting() async {
+        let a = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Desc", relevance: "Rel")
+        let b = RecordingState.suggesting(transcript: "hello", practices: [], rationale: "", wasEscalated: false, relevanceByID: [:])
+        #expect(a != b)
+    }
 }

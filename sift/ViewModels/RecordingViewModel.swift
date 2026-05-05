@@ -10,7 +10,7 @@ enum RecordingState: Equatable {
     case transcribing
     case analyzing
     case suggesting(transcript: String, practices: [Practice], rationale: String, wasEscalated: Bool, relevanceByID: [String: String])
-    case reflecting(practiceName: String)
+    case reflecting(practiceName: String, practiceDescription: String, relevance: String)
     case error(String)
 }
 
@@ -26,9 +26,9 @@ final class RecordingViewModel {
     private var geminiService: GeminiService?
     private var currentRecordingURL: URL?
     private var modelContext: ModelContext?
-    private var pendingSession: Session?
-    private var currentAttempt: PracticeAttempt?
-    private var lastRecommendationResult: RecommendationResult?
+    var pendingSession: Session?
+    var currentAttempt: PracticeAttempt?
+    var lastRecommendationResult: RecommendationResult?
 
     func configure(modelContext: ModelContext, transcriptionService: TranscriptionService, geminiService: GeminiService) {
         self.modelContext = modelContext
@@ -127,12 +127,16 @@ final class RecordingViewModel {
         }
     }
 
-    func logPractice(practiceID: String, practiceName: String) {
+    func logPractice(practice: Practice, relevance: String?) {
         guard let session = pendingSession else { return }
-        let attempt = PracticeAttempt(practiceID: practiceID, practiceName: practiceName)
+        let attempt = PracticeAttempt(practiceID: practice.id, practiceName: practice.name)
         session.attempts.append(attempt)
         currentAttempt = attempt
-        state = .reflecting(practiceName: practiceName)
+        state = .reflecting(
+            practiceName: practice.name,
+            practiceDescription: practice.description,
+            relevance: relevance ?? ""
+        )
     }
 
     func completeReflection(wasHelpful: Bool?, notes: String?) {

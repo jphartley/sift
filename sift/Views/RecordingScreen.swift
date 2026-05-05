@@ -24,7 +24,7 @@ struct RecordingScreen: View {
                     case .transcribing:
                         transcribingView
                     case .analyzing:
-                        analyzingView
+                        AnalyzingView(transcript: viewModel.lastTranscript)
                     case .suggesting(let transcript, let practices, let rationale, let wasEscalated, let relevanceByID):
                         SuggestionView(
                             transcript: transcript,
@@ -34,13 +34,15 @@ struct RecordingScreen: View {
                             relevanceByID: relevanceByID,
                             previouslyHelpfulIDs: previouslyHelpfulIDs(),
                             onSelect: { practice in
-                                viewModel.logPractice(practiceID: practice.id, practiceName: practice.name)
+                                viewModel.logPractice(practice: practice, relevance: relevanceByID[practice.id])
                             },
                             onSkip: { viewModel.skipSuggestions() }
                         )
-                    case .reflecting(let practiceName):
+                    case .reflecting(let practiceName, let practiceDescription, let relevance):
                         ReflectionView(
                             practiceName: practiceName,
+                            practiceDescription: practiceDescription,
+                            relevance: relevance,
                             onSave: { wasHelpful, notes in
                                 viewModel.completeReflection(wasHelpful: wasHelpful, notes: notes)
                             },
@@ -52,6 +54,7 @@ struct RecordingScreen: View {
                 }
             }
             .navigationTitle("Check In")
+            .navigationBarTitleDisplayMode(.inline)
         }
         .task {
             viewModel.configure(modelContext: modelContext, transcriptionService: transcriptionService, geminiService: geminiService)
@@ -204,16 +207,6 @@ struct RecordingScreen: View {
             ProgressView()
                 .scaleEffect(1.2)
             Text("Transcribing...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var analyzingView: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.2)
-            Text("Analyzing...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
