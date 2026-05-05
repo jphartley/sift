@@ -11,13 +11,13 @@ final class AudioRecorderService {
 
     func requestPermission() async -> Bool {
         await withCheckedContinuation { continuation in
-            switch AVAudioSession.sharedInstance().recordPermission {
+            switch AVAudioApplication.shared.recordPermission {
             case .granted:
                 continuation.resume(returning: true)
             case .denied:
                 continuation.resume(returning: false)
             case .undetermined:
-                AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                AVAudioApplication.requestRecordPermission { granted in
                     continuation.resume(returning: granted)
                 }
             @unknown default:
