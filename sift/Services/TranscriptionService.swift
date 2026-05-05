@@ -3,6 +3,7 @@ import WhisperKit
 
 enum ModelState: Equatable {
     case notLoaded
+    case downloading(progress: Double)
     case loading
     case ready
     case failed(String)
@@ -14,9 +15,27 @@ final class TranscriptionService {
     var modelState: ModelState = .notLoaded
 
     func loadModel() async {
-        modelState = .loading
+        if case .downloading = modelState { return }
+        if case .loading = modelState { return }
+        if case .ready = modelState { return }
+
+        modelState = .downloading(progress: 0)
+
         do {
-            whisperKit = try await WhisperKit(model: "openai_whisper-base.en")
+            let modelFolder = try await WhisperKit.download(
+                variant: "openai_whisper-base.en",
+                progressCallback: { [weak self] progress in
+                    self?.modelState = .downloading(progress: progress.fractionCompleted)
+                }
+            )
+
+            modelState = .loading
+
+            whisperKit = try await WhisperKit(
+                modelFolder: modelFolder.path,
+                download: false
+            )
+
             modelState = .ready
         } catch {
             modelState = .failed(error.localizedDescription)

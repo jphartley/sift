@@ -21,18 +21,18 @@ final class RecordingViewModel {
     var lastTranscript: String = ""
 
     private let audioRecorder = AudioRecorderService()
-    private let transcriptionService = TranscriptionService()
+    private var transcriptionService: TranscriptionService?
     private var currentRecordingURL: URL?
     private var modelContext: ModelContext?
     private var pendingSession: Session?
     private var currentAttempt: PracticeAttempt?
 
-    func configure(modelContext: ModelContext) {
+    func configure(modelContext: ModelContext, transcriptionService: TranscriptionService) {
         self.modelContext = modelContext
+        self.transcriptionService = transcriptionService
     }
 
     func setup() async {
-        guard transcriptionService.modelState == .notLoaded else { return }
         state = .loadingModel
 
         let hasPermission = await audioRecorder.requestPermission()
@@ -41,16 +41,7 @@ final class RecordingViewModel {
             return
         }
 
-        await transcriptionService.loadModel()
-
-        switch transcriptionService.modelState {
-        case .ready:
-            state = .ready
-        case .failed(let message):
-            state = .error(message)
-        default:
-            break
-        }
+        state = .ready
     }
 
     func startRecording() {
@@ -79,6 +70,11 @@ final class RecordingViewModel {
 
         guard let recordingURL = currentRecordingURL else {
             state = .error("No recording found")
+            return
+        }
+
+        guard let transcriptionService else {
+            state = .error("Transcription service not configured")
             return
         }
 

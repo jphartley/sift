@@ -6,15 +6,16 @@ import Testing
 @MainActor
 struct RecordingViewModelTests {
 
-    private func makeViewModel() throws -> (RecordingViewModel, ModelContainer) {
+    private func makeViewModel() throws -> (RecordingViewModel, ModelContainer, TranscriptionService) {
         let container = try TestHelpers.makeContainer()
+        let transcriptionService = TranscriptionService()
         let viewModel = RecordingViewModel()
-        viewModel.configure(modelContext: container.mainContext)
-        return (viewModel, container)
+        viewModel.configure(modelContext: container.mainContext, transcriptionService: transcriptionService)
+        return (viewModel, container, transcriptionService)
     }
 
     @Test func completeReflectionPersistsSessionAndResetsState() throws {
-        let (viewModel, container) = try makeViewModel()
+        let (viewModel, container, _) = try makeViewModel()
         let context = container.mainContext
 
         let session = Session(transcript: "I feel tired")
@@ -32,7 +33,7 @@ struct RecordingViewModelTests {
     }
 
     @Test func skipSuggestionsPersistsEmptySession() throws {
-        let (viewModel, container) = try makeViewModel()
+        let (viewModel, container, _) = try makeViewModel()
         let context = container.mainContext
 
         let session = Session(transcript: "test")
@@ -46,7 +47,7 @@ struct RecordingViewModelTests {
     }
 
     @Test func dismissPracticeClearsAttempts() throws {
-        let (_, container) = try makeViewModel()
+        let (_, container, _) = try makeViewModel()
         let context = container.mainContext
 
         let session = Session(transcript: "test")
@@ -66,7 +67,7 @@ struct RecordingViewModelTests {
     }
 
     @Test func practiceRankingBoostsPreviouslyHelpful() throws {
-        let (_, container) = try makeViewModel()
+        let (_, container, _) = try makeViewModel()
         let context = container.mainContext
 
         let helpful = PracticeAttempt(
@@ -83,5 +84,14 @@ struct RecordingViewModelTests {
         let results = try context.fetch(descriptor)
         #expect(results.count == 1)
         #expect(results[0].practiceID == "box-breathing")
+    }
+
+    @Test func setupDoesNotTriggerModelLoad() async throws {
+        let (viewModel, _, transcriptionService) = try makeViewModel()
+        transcriptionService.modelState = .ready
+
+        await viewModel.setup()
+
+        #expect(transcriptionService.modelState == .ready)
     }
 }

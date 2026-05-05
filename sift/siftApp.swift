@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct siftApp: App {
     let container: ModelContainer
+    @State private var transcriptionService = TranscriptionService()
 
     init() {
         do {
@@ -16,6 +17,10 @@ struct siftApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+                    await transcriptionService.loadModel()
+                }
+                .environment(transcriptionService)
         }
         .modelContainer(container)
     }

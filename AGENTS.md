@@ -35,6 +35,7 @@ This is the **voice check-in MVP** — the first product-feature iteration after
 - CLI test (unit/integration only, skip slow UI): append ` -skip-testing:siftUITests`
 - Single SPM dependency: WhisperKit (≥0.8.0, from `https://github.com/argmaxinc/WhisperKit.git`).
 - No CI, no lint config yet.
+- **Pre-push hook**: `gitleaks detect` runs before every push. Blocked push = fix secrets first.
 
 ## Architecture
 

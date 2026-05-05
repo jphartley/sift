@@ -3,47 +3,53 @@ import SwiftData
 
 struct RecordingScreen: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(TranscriptionService.self) private var transcriptionService
     @State private var viewModel = RecordingViewModel()
 
     var body: some View {
         NavigationStack {
             Group {
-                switch viewModel.state {
-                case .idle, .loadingModel:
+                switch transcriptionService.modelState {
+                case .downloading, .loading, .notLoaded:
                     loadingView
-                case .ready:
-                    readyView
-                case .recording:
-                    recordingView
-                case .transcribing:
-                    transcribingView
-                case .suggesting(let transcript, let practices):
-                    SuggestionView(
-                        transcript: transcript,
-                        practices: practices,
-                        previouslyHelpfulIDs: previouslyHelpfulIDs(),
-                        onSelect: { practice in
-                            viewModel.logPractice(practiceID: practice.id, practiceName: practice.name)
-                        },
-                        onSkip: { viewModel.skipSuggestions() }
-                    )
-                case .reflecting(let practiceName):
-                    ReflectionView(
-                        practiceName: practiceName,
-                        onSave: { wasHelpful, notes in
-                            viewModel.completeReflection(wasHelpful: wasHelpful, notes: notes)
-                        },
-                        onDismiss: { viewModel.dismissPractice() }
-                    )
-                case .error(let message):
+                case .failed(let message):
                     errorView(message)
+                case .ready:
+                    switch viewModel.state {
+                    case .idle, .loadingModel, .ready:
+                        readyView
+                    case .recording:
+                        recordingView
+                    case .transcribing:
+                        transcribingView
+                    case .suggesting(let transcript, let practices):
+                        SuggestionView(
+                            transcript: transcript,
+                            practices: practices,
+                            previouslyHelpfulIDs: previouslyHelpfulIDs(),
+                            onSelect: { practice in
+                                viewModel.logPractice(practiceID: practice.id, practiceName: practice.name)
+                            },
+                            onSkip: { viewModel.skipSuggestions() }
+                        )
+                    case .reflecting(let practiceName):
+                        ReflectionView(
+                            practiceName: practiceName,
+                            onSave: { wasHelpful, notes in
+                                viewModel.completeReflection(wasHelpful: wasHelpful, notes: notes)
+                            },
+                            onDismiss: { viewModel.dismissPractice() }
+                        )
+                    case .error(let message):
+                        errorView(message)
+                    }
                 }
             }
             .navigationTitle("Check In")
         }
         .task {
+            viewModel.configure(modelContext: modelContext, transcriptionService: transcriptionService)
             await viewModel.setup()
-            viewModel.configure(modelContext: modelContext)
         }
     }
 
@@ -58,11 +64,20 @@ struct RecordingScreen: View {
 
     private var loadingView: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.2)
-            Text("Loading speech model...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            if case .downloading(let progress) = transcriptionService.modelState {
+                ProgressView(value: progress)
+                    .progressViewStyle(.linear)
+                    .frame(width: 200)
+                Text("Downloading speech model...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Preparing speech model...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -198,7 +213,7 @@ struct RecordingScreen: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             Button("Retry") {
-                Task { await viewModel.setup() }
+                Task { await transcriptionService.loadModel() }
             }
             .buttonStyle(.borderedProminent)
         }
