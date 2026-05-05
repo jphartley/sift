@@ -25,4 +25,22 @@ struct SessionTests {
         let b = Session()
         #expect(a.id != b.id)
     }
+
+    @Test func geminiFieldsDefaultToNil() async {
+        let session = Session()
+        #expect(session.geminiRationale == nil)
+        #expect(session.geminiModelUsed == nil)
+        #expect(session.geminiConfidence == nil)
+    }
+
+    @Test func geminiFieldsPersistValues() async {
+        let session = Session(transcript: "test")
+        session.geminiRationale = "You seem stressed"
+        session.geminiModelUsed = "gemini-3-flash-preview"
+        session.geminiConfidence = 0.85
+
+        #expect(session.geminiRationale == "You seem stressed")
+        #expect(session.geminiModelUsed == "gemini-3-flash-preview")
+        #expect(session.geminiConfidence == 0.85)
+    }
 }

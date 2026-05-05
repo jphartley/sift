@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		3FE5FAB52FA73DB0009B3BE5 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FAB72FA73DB0009B3BE5 /* WhisperKit */; };
 		3FE5FAD42FA73DB0009B3BE5 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FAB72FA73DB0009B3BE5 /* WhisperKit */; };
+		3FE5FAD82FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */; };
+		3FE5FAD92FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,19 +29,6 @@
 			remoteInfo = sift;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		3FE5FAD22FA73DB0009B3BE5 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 3FE5FAA62FA73DAF009B3BE5 /* sift */;
-			targetProxy = 3FE5FAD02FA73DB0009B3BE5 /* PBXContainerItemProxy */;
-		};
-		3FE5FAD32FA73DB0009B3BE5 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 3FE5FAA62FA73DAF009B3BE5 /* sift */;
-			targetProxy = 3FE5FAD12FA73DB0009B3BE5 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		3FE5FAA72FA73DAF009B3BE5 /* sift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sift.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -71,6 +60,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3FE5FAB52FA73DB0009B3BE5 /* WhisperKit in Frameworks */,
+				3FE5FAD82FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +69,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3FE5FAD42FA73DB0009B3BE5 /* WhisperKit in Frameworks */,
+				3FE5FAD92FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,6 +124,7 @@
 			name = sift;
 			packageProductDependencies = (
 				3FE5FAB72FA73DB0009B3BE5 /* WhisperKit */,
+				3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */,
 			);
 			productName = sift;
 			productReference = 3FE5FAA72FA73DAF009B3BE5 /* sift.app */;
@@ -156,6 +148,7 @@
 			name = siftTests;
 			packageProductDependencies = (
 				3FE5FAB72FA73DB0009B3BE5 /* WhisperKit */,
+				3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */,
 			);
 			productName = siftTests;
 			productReference = 3FE5FAC02FA73DB0009B3BE5 /* siftTests.xctest */;
@@ -214,6 +207,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				3FE5FAB62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				3FE5FAD62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "generative-ai-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3FE5FAA82FA73DAF009B3BE5 /* Products */;
@@ -260,6 +254,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3FE5FAD22FA73DB0009B3BE5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3FE5FAA62FA73DAF009B3BE5 /* sift */;
+			targetProxy = 3FE5FAD02FA73DB0009B3BE5 /* PBXContainerItemProxy */;
+		};
+		3FE5FAD32FA73DB0009B3BE5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3FE5FAA62FA73DAF009B3BE5 /* sift */;
+			targetProxy = 3FE5FAD12FA73DB0009B3BE5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		3FE5FAB02FA73DB0009B3BE5 /* Debug */ = {
@@ -450,6 +457,7 @@
 		3FE5FAC62FA73DB0009B3BE5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = AB6QK3F533;
@@ -462,13 +470,13 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/sift.app/sift";
-				BUNDLE_LOADER = "$(TEST_HOST)";
 			};
 			name = Debug;
 		};
 		3FE5FAC72FA73DB0009B3BE5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = AB6QK3F533;
@@ -481,7 +489,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/sift.app/sift";
-				BUNDLE_LOADER = "$(TEST_HOST)";
 			};
 			name = Release;
 		};
@@ -569,6 +576,14 @@
 				minimumVersion = 0.8.0;
 			};
 		};
+		3FE5FAD62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "generative-ai-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google-gemini/generative-ai-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -576,6 +591,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3FE5FAB62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
+		};
+		3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3FE5FAD62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "generative-ai-swift" */;
+			productName = GoogleGenerativeAI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

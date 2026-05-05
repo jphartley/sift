@@ -5,6 +5,7 @@ import SwiftData
 struct siftApp: App {
     let container: ModelContainer
     @State private var transcriptionService = TranscriptionService()
+    @State private var geminiService = GeminiService()
 
     init() {
         do {
@@ -21,6 +22,7 @@ struct siftApp: App {
                     await transcriptionService.loadModel()
                 }
                 .environment(transcriptionService)
+                .environment(geminiService)
         }
         .modelContainer(container)
     }

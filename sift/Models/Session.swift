@@ -8,6 +8,9 @@ final class Session {
     var transcript: String
     var audioDuration: TimeInterval
     var transcriptionDurationMs: Int
+    var geminiRationale: String?
+    var geminiModelUsed: String?
+    var geminiConfidence: Double?
 
     @Relationship(deleteRule: .cascade, inverse: \PracticeAttempt.session)
     var attempts: [PracticeAttempt] = []

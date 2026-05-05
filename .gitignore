@@ -40,5 +40,8 @@ fastlane/screenshots/**/*.png
 # Swift
 *.swiftpm/
 
+# Secrets
+Secrets.swift
+
 # Playgrounds
 playground.xcworkspace

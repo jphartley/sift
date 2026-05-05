@@ -6,16 +6,17 @@ import Testing
 @MainActor
 struct RecordingViewModelTests {
 
-    private func makeViewModel() throws -> (RecordingViewModel, ModelContainer, TranscriptionService) {
+    private func makeViewModel() throws -> (RecordingViewModel, ModelContainer, TranscriptionService, GeminiService) {
         let container = try TestHelpers.makeContainer()
         let transcriptionService = TranscriptionService()
+        let geminiService = GeminiService()
         let viewModel = RecordingViewModel()
-        viewModel.configure(modelContext: container.mainContext, transcriptionService: transcriptionService)
-        return (viewModel, container, transcriptionService)
+        viewModel.configure(modelContext: container.mainContext, transcriptionService: transcriptionService, geminiService: geminiService)
+        return (viewModel, container, transcriptionService, geminiService)
     }
 
     @Test func completeReflectionPersistsSessionAndResetsState() throws {
-        let (viewModel, container, _) = try makeViewModel()
+        let (viewModel, container, _, _) = try makeViewModel()
         let context = container.mainContext
 
         let session = Session(transcript: "I feel tired")
@@ -33,7 +34,7 @@ struct RecordingViewModelTests {
     }
 
     @Test func skipSuggestionsPersistsEmptySession() throws {
-        let (viewModel, container, _) = try makeViewModel()
+        let (viewModel, container, _, _) = try makeViewModel()
         let context = container.mainContext
 
         let session = Session(transcript: "test")
@@ -47,7 +48,7 @@ struct RecordingViewModelTests {
     }
 
     @Test func dismissPracticeClearsAttempts() throws {
-        let (_, container, _) = try makeViewModel()
+        let (_, container, _, _) = try makeViewModel()
         let context = container.mainContext
 
         let session = Session(transcript: "test")
@@ -67,7 +68,7 @@ struct RecordingViewModelTests {
     }
 
     @Test func practiceRankingBoostsPreviouslyHelpful() throws {
-        let (_, container, _) = try makeViewModel()
+        let (_, container, _, _) = try makeViewModel()
         let context = container.mainContext
 
         let helpful = PracticeAttempt(
@@ -87,11 +88,41 @@ struct RecordingViewModelTests {
     }
 
     @Test func setupDoesNotTriggerModelLoad() async throws {
-        let (viewModel, _, transcriptionService) = try makeViewModel()
+        let (viewModel, _, transcriptionService, _) = try makeViewModel()
         transcriptionService.modelState = .ready
 
         await viewModel.setup()
 
         #expect(transcriptionService.modelState == .ready)
+    }
+
+    @Test func configureSetsAllServices() throws {
+        let container = try TestHelpers.makeContainer()
+        let transcriptionService = TranscriptionService()
+        let geminiService = GeminiService()
+        let viewModel = RecordingViewModel()
+
+        viewModel.configure(
+            modelContext: container.mainContext,
+            transcriptionService: transcriptionService,
+            geminiService: geminiService
+        )
+
+        #expect(viewModel.state == .idle)
+    }
+
+    @Test func analyzingStateEquality() async {
+        #expect(RecordingState.analyzing == RecordingState.analyzing)
+    }
+
+    @Test func suggestingWithGeminiDataIsNotIdle() async {
+        let state = RecordingState.suggesting(
+            transcript: "test",
+            practices: [],
+            rationale: "reason",
+            wasEscalated: false,
+            relevanceByID: [:]
+        )
+        #expect(state != RecordingState.idle)
     }
 }

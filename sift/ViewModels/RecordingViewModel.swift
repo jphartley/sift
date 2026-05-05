@@ -8,7 +8,8 @@ enum RecordingState: Equatable {
     case ready
     case recording
     case transcribing
-    case suggesting(transcript: String, practices: [Practice])
+    case analyzing
+    case suggesting(transcript: String, practices: [Practice], rationale: String, wasEscalated: Bool, relevanceByID: [String: String])
     case reflecting(practiceName: String)
     case error(String)
 }
@@ -22,14 +23,17 @@ final class RecordingViewModel {
 
     private let audioRecorder = AudioRecorderService()
     private var transcriptionService: TranscriptionService?
+    private var geminiService: GeminiService?
     private var currentRecordingURL: URL?
     private var modelContext: ModelContext?
     private var pendingSession: Session?
     private var currentAttempt: PracticeAttempt?
+    private var lastRecommendationResult: RecommendationResult?
 
-    func configure(modelContext: ModelContext, transcriptionService: TranscriptionService) {
+    func configure(modelContext: ModelContext, transcriptionService: TranscriptionService, geminiService: GeminiService) {
         self.modelContext = modelContext
         self.transcriptionService = transcriptionService
+        self.geminiService = geminiService
     }
 
     func setup() async {
@@ -94,10 +98,31 @@ final class RecordingViewModel {
                     transcriptionDurationMs: transcriptionMs
                 )
 
-                let suggestions = await suggestPractices(for: text)
-                state = .suggesting(transcript: text, practices: suggestions)
+                state = .analyzing
+
+                let result = try await analyzeAndSuggest(transcript: text)
+
+                pendingSession?.geminiRationale = result.rationale
+                pendingSession?.geminiModelUsed = result.modelUsed
+                pendingSession?.geminiConfidence = result.confidence
+                lastRecommendationResult = result
+
+                let practices = resolvePractices(from: result)
+                var relevanceByID: [String: String] = [:]
+                for (id, relevance) in result.practices {
+                    relevanceByID[id] = relevance
+                }
+
+                state = .suggesting(
+                    transcript: text,
+                    practices: practices,
+                    rationale: result.rationale,
+                    wasEscalated: result.wasEscalated,
+                    relevanceByID: relevanceByID
+                )
             } catch {
-                state = .error("Transcription failed: \(error.localizedDescription)")
+                state = .error("Analyzing failed: \(error.localizedDescription)")
+                print("[RecordingViewModel] Analysis failed in stopRecording: \(error)")
             }
         }
     }
@@ -129,14 +154,24 @@ final class RecordingViewModel {
     }
 
     func dismissPractice() {
-        guard let session = pendingSession else {
+        guard let session = pendingSession, let result = lastRecommendationResult else {
             state = .ready
             return
         }
-        let suggestions = rankPractices(for: session.transcript)
+        let practices = resolvePractices(from: result)
         currentAttempt = nil
         session.attempts.removeAll()
-        state = .suggesting(transcript: session.transcript, practices: suggestions)
+        var relevanceByID: [String: String] = [:]
+        for (id, relevance) in result.practices {
+            relevanceByID[id] = relevance
+        }
+        state = .suggesting(
+            transcript: session.transcript,
+            practices: practices,
+            rationale: result.rationale,
+            wasEscalated: result.wasEscalated,
+            relevanceByID: relevanceByID
+        )
     }
 
     func skipSuggestions() {
@@ -155,31 +190,69 @@ final class RecordingViewModel {
         state = .ready
     }
 
-    private func suggestPractices(for transcript: String) async -> [Practice] {
-        let ranked = rankPractices(for: transcript)
-        return Array(ranked.prefix(3))
-    }
-
-    private func rankPractices(for transcript: String) -> [Practice] {
-        let matches = Practice.match(transcript: transcript)
-        let helpfulIDs = previouslyHelpfulIDs()
-
-        var scored = matches.map { match -> (Practice, Int) in
-            let bonus = helpfulIDs.contains(match.practice.id) ? 2 : 0
-            return (match.practice, match.score + bonus)
+    func retryAnalysis() {
+        guard let session = pendingSession else {
+            state = .ready
+            return
         }
-        scored.sort { $0.1 > $1.1 }
+        let transcript = session.transcript
+        state = .analyzing
+        Task {
+            do {
+                let result = try await analyzeAndSuggest(transcript: transcript)
 
-        return scored.map(\.0)
+                pendingSession?.geminiRationale = result.rationale
+                pendingSession?.geminiModelUsed = result.modelUsed
+                pendingSession?.geminiConfidence = result.confidence
+                lastRecommendationResult = result
+
+                let practices = resolvePractices(from: result)
+                var relevanceByID: [String: String] = [:]
+                for (id, relevance) in result.practices {
+                    relevanceByID[id] = relevance
+                }
+
+                state = .suggesting(
+                    transcript: transcript,
+                    practices: practices,
+                    rationale: result.rationale,
+                    wasEscalated: result.wasEscalated,
+                    relevanceByID: relevanceByID
+                )
+            } catch {
+                state = .error("Analyzing failed: \(error.localizedDescription)")
+                print("[RecordingViewModel] Analysis failed in retryAnalysis: \(error)")
+            }
+        }
     }
 
-    private func previouslyHelpfulIDs() -> Set<String> {
+    private func analyzeAndSuggest(transcript: String) async throws -> RecommendationResult {
+        guard let geminiService else {
+            throw GeminiError.apiKeyMissing
+        }
+
+        let history = buildHistoryPayload()
+        return try await geminiService.recommend(transcript: transcript, history: history)
+    }
+
+    private func buildHistoryPayload() -> [SessionHistoryEntry] {
         guard let context = modelContext else { return [] }
-        let descriptor = FetchDescriptor<PracticeAttempt>(
-            predicate: #Predicate { $0.wasHelpful == true },
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
-        let helpful = (try? context.fetch(descriptor)) ?? []
-        return Set(helpful.map(\.practiceID))
+        let descriptor = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        let sessions = (try? context.fetch(descriptor)) ?? []
+
+        return sessions.map { session in
+            let attempt = session.attempts.first
+            return SessionHistoryEntry(
+                timestamp: session.timestamp,
+                transcript: session.transcript,
+                practiceName: attempt?.practiceName,
+                wasHelpful: attempt?.wasHelpful
+            )
+        }
+    }
+
+    private func resolvePractices(from result: RecommendationResult) -> [Practice] {
+        let allPractices = Dictionary(uniqueKeysWithValues: Practice.all.map { ($0.id, $0) })
+        return result.practices.compactMap { allPractices[$0.practiceID] }
     }
 }

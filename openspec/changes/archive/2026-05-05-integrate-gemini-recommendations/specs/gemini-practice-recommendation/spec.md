@@ -1,0 +1,129 @@
+## ADDED Requirements
+
+### Requirement: System uses Gemini to recommend practices
+
+The system SHALL use Google Gemini to analyze the user's voice check-in transcript and recommend 2–3 wellness practices from the curated library. The system SHALL construct a prompt containing the full transcript, all prior session history with practice attempts, and the complete practice library. The system SHALL use `gemini-3-flash-preview` as the default model.
+
+#### Scenario: Gemini returns recommendations successfully
+
+- **WHEN** a transcript is available and Gemini responds with valid structured JSON
+- **THEN** the system SHALL extract 2–3 practice IDs, an overarching rationale, per-practice relevance text, and a confidence score (0.0–1.0)
+- **THEN** the system SHALL transition to the suggestion view displaying the recommended practices with their rationale and relevance text
+
+#### Scenario: No prior sessions exist
+
+- **WHEN** the user has no prior sessions in history
+- **THEN** the system SHALL still send a valid prompt containing only the current transcript and practice library
+- **THEN** the system SHALL return recommendations based solely on the current transcript
+
+### Requirement: System routes between Flash and Pro models based on confidence and server health
+
+The system SHALL use `gemini-3-flash-preview` for every initial recommendation request. The system SHALL escalate to `gemini-3.1-pro-preview` when the Flash response returns a confidence score below 0.7. The system SHALL also silently fall back to Pro when Flash fails with a transient server error (HTTP 429, 500, 502, 503, 504, or "unavailable" status).
+
+#### Scenario: Flash returns high confidence
+
+- **WHEN** `gemini-3-flash-preview` returns recommendations with confidence ≥ 0.7
+- **THEN** the system SHALL use that response and SHALL NOT escalate to Pro
+
+#### Scenario: Flash returns low confidence
+
+- **WHEN** `gemini-3-flash-preview` returns recommendations with confidence < 0.7
+- **THEN** the system SHALL retry the request with `gemini-3.1-pro-preview`
+- **THEN** the system SHALL use the Pro response regardless of its confidence
+- **THEN** the system SHALL display a developer-visible indicator that Pro escalation occurred
+
+#### Scenario: Flash fails with transient server error
+
+- **WHEN** `gemini-3-flash-preview` fails with an HTTP 429, 500, 502, 503, 504, or "unavailable" status
+- **THEN** the system SHALL automatically retry the request with `gemini-3.1-pro-preview` without showing an error to the user
+- **THEN** the system SHALL log the fallback to the console
+- **THEN** the system SHALL display a developer-visible indicator that Pro escalation occurred
+
+#### Scenario: Both Flash and Pro fail
+
+- **WHEN** both `gemini-3-flash-preview` and `gemini-3.1-pro-preview` fail
+- **THEN** the system SHALL display an error message with a retry button
+
+### Requirement: System persists Gemini recommendation data
+
+The system SHALL persist the Gemini rationale, model used, and confidence score with the associated Session in SwiftData.
+
+#### Scenario: Session completed with Gemini recommendations
+
+- **WHEN** the user completes a session (selects a practice or skips suggestions)
+- **THEN** the system SHALL persist `geminiRationale`, `geminiModelUsed`, and `geminiConfidence` as part of the Session record
+- **THEN** the system SHALL persist nil for all three fields if Gemini was never invoked (e.g., transcription failed)
+
+### Requirement: System displays Gemini rationale and relevance
+
+The system SHALL display the overarching Gemini rationale as a text banner in the suggestion view. The system SHALL display per-practice relevance text below each recommended practice card.
+
+#### Scenario: Gemini recommendations include rationale
+
+- **WHEN** Gemini returns an overarching rationale string
+- **THEN** the system SHALL display the rationale prominently in the suggestion view before the practice cards
+
+#### Scenario: Gemini recommendations include per-practice relevance
+
+- **WHEN** Gemini returns a relevance string for a given practice
+- **THEN** the system SHALL display that relevance text on or below the corresponding practice card
+
+### Requirement: System handles Gemini failures gracefully
+
+The system SHALL detect Gemini API errors after both Flash and Pro have been attempted. The system SHALL display an inline error state with a retry button that re-initiates the full Flash → Pro flow.
+
+#### Scenario: Both models return an error
+
+- **WHEN** both Flash and Pro attempts fail (after transient fallback has been exhausted)
+- **THEN** the system SHALL display an error message describing the failure
+- **THEN** the system SHALL display a retry button
+
+#### Scenario: User retries after Gemini failure
+
+- **WHEN** the user taps the retry button
+- **THEN** the system SHALL re-send the recommendation request to `gemini-3-flash-preview`
+- **THEN** the system SHALL follow the same Flash → Pro escalation path as the initial request
+
+#### Scenario: Gemini returns invalid JSON
+
+- **WHEN** Gemini returns a response that cannot be parsed into the expected structured output schema
+- **THEN** the system SHALL treat this as a failure and display the error state with retry button
+
+### Requirement: Gemini prompt includes full user history
+
+The system SHALL include all prior sessions in the Gemini prompt. Each session SHALL include the full transcript text, the practice name attempted (if any), and the helpfulness rating (true, false, or nil).
+
+#### Scenario: User has multiple prior sessions
+
+- **WHEN** the user has 5 prior sessions with transcripts, practice attempts, and helpfulness ratings
+- **THEN** the system SHALL include all 5 sessions in the Gemini prompt
+- **THEN** each session SHALL include its full transcript, practice name, and helpfulness rating
+
+#### Scenario: User has prior sessions with no practice attempted
+
+- **WHEN** a prior session has no associated practice attempts (user skipped suggestions)
+- **THEN** the system SHALL still include the session transcript in the prompt without practice or helpfulness data
+
+### Requirement: Gemini service is instantiated and injected at app launch
+
+The system SHALL create a single Gemini service instance at app launch following the same pattern as TranscriptionService. The service SHALL be injected into the SwiftUI environment and consumed by RecordingViewModel.
+
+#### Scenario: App launches successfully
+
+- **WHEN** the app launches
+- **THEN** the system SHALL instantiate GeminiService without making any network requests
+- **THEN** the system SHALL not validate the API key at launch time
+
+### Requirement: API key is stored in a gitignored source file
+
+The system SHALL read the Gemini API key from `Secrets.geminiApiKey`, a constant defined in `Secrets.swift`. The file SHALL be excluded from version control. A `Secrets.swift.example` template SHALL be committed with a placeholder value.
+
+#### Scenario: API key is configured
+
+- **WHEN** `Secrets.swift` contains a non-empty `geminiApiKey` value
+- **THEN** the system SHALL use it for Gemini API requests
+
+#### Scenario: API key is missing
+
+- **WHEN** `Secrets.swift` contains an empty `geminiApiKey` value
+- **THEN** the system SHALL fail at the point of the first Gemini request with an error indicating the key is missing

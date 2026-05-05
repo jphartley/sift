@@ -4,6 +4,7 @@ import SwiftData
 struct RecordingScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(TranscriptionService.self) private var transcriptionService
+    @Environment(GeminiService.self) private var geminiService
     @State private var viewModel = RecordingViewModel()
 
     var body: some View {
@@ -22,10 +23,15 @@ struct RecordingScreen: View {
                         recordingView
                     case .transcribing:
                         transcribingView
-                    case .suggesting(let transcript, let practices):
+                    case .analyzing:
+                        analyzingView
+                    case .suggesting(let transcript, let practices, let rationale, let wasEscalated, let relevanceByID):
                         SuggestionView(
                             transcript: transcript,
                             practices: practices,
+                            rationale: rationale,
+                            wasEscalated: wasEscalated,
+                            relevanceByID: relevanceByID,
                             previouslyHelpfulIDs: previouslyHelpfulIDs(),
                             onSelect: { practice in
                                 viewModel.logPractice(practiceID: practice.id, practiceName: practice.name)
@@ -48,7 +54,7 @@ struct RecordingScreen: View {
             .navigationTitle("Check In")
         }
         .task {
-            viewModel.configure(modelContext: modelContext, transcriptionService: transcriptionService)
+            viewModel.configure(modelContext: modelContext, transcriptionService: transcriptionService, geminiService: geminiService)
             await viewModel.setup()
         }
     }
@@ -203,6 +209,16 @@ struct RecordingScreen: View {
         }
     }
 
+    private var analyzingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.2)
+            Text("Analyzing...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private func errorView(_ message: String) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -213,7 +229,7 @@ struct RecordingScreen: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             Button("Retry") {
-                Task { await transcriptionService.loadModel() }
+                viewModel.retryAnalysis()
             }
             .buttonStyle(.borderedProminent)
         }

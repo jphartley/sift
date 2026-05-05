@@ -80,4 +80,39 @@ struct SwiftDataTests {
         #expect(notHelpfulResults.count == 1)
         #expect(notHelpfulResults[0].practiceID == "body-scan")
     }
+
+    @Test func sessionPersistsGeminiFields() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let session = Session(transcript: "test")
+        session.geminiRationale = "You seem tired"
+        session.geminiModelUsed = "gemini-3-flash-preview"
+        session.geminiConfidence = 0.9
+
+        context.insert(session)
+        try context.save()
+
+        let fetchDescriptor = FetchDescriptor<Session>()
+        let sessions = try context.fetch(fetchDescriptor)
+        #expect(sessions.count == 1)
+        #expect(sessions[0].geminiRationale == "You seem tired")
+        #expect(sessions[0].geminiModelUsed == "gemini-3-flash-preview")
+        #expect(sessions[0].geminiConfidence == 0.9)
+    }
+
+    @Test func sessionGeminiFieldsNilByDefault() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let session = Session(transcript: "test")
+        context.insert(session)
+        try context.save()
+
+        let fetchDescriptor = FetchDescriptor<Session>()
+        let sessions = try context.fetch(fetchDescriptor)
+        #expect(sessions[0].geminiRationale == nil)
+        #expect(sessions[0].geminiModelUsed == nil)
+        #expect(sessions[0].geminiConfidence == nil)
+    }
 }
