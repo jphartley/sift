@@ -24,16 +24,15 @@ If a task fails or you are stuck:
 
 ## Current phase
 
-This is the **voice check-in MVP** — the first product-feature iteration after the transcription validation prototype. The app's core loop: record voice note → transcribe on-device with WhisperKit → get 2–3 wellness practice suggestions (keyword-matched from a curated library) → try one → reflect on helpfulness. Session and practice attempt history persisted via SwiftData. LLM post-processing, HealthKit, and full conversational memory are out of scope.
+This is the **voice check-in MVP** — the first product-feature iteration after the transcription validation prototype. The app's core loop: record voice note → transcribe on-device with WhisperKit → analyze transcript with Gemini (two-tier Flash/Pro model routing) → get 2–3 AI-curated wellness practice suggestions with rationale and relevance scores → try one → reflect on helpfulness. Session and practice attempt history persisted via SwiftData and fed back to Gemini as context. HealthKit and full conversational memory are out of scope.
 
 ## Build & run
 
 - Open `sift.xcodeproj` in Xcode (built with Xcode 26.4.1).
-- Single target `sift`. Single SPM dependency: WhisperKit (≥0.8.0, from `https://github.com/argmaxinc/WhisperKit.git`).
+- Single target `sift`. Two SPM dependencies: WhisperKit (from `https://github.com/argmaxinc/WhisperKit.git`) and GoogleGenerativeAI (from `https://github.com/google-gemini/generative-ai-swift.git`).
 - CLI build: `xcodebuild -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`
 - CLI test (all): `xcodebuild test -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 - CLI test (unit/integration only, skip slow UI): append ` -skip-testing:siftUITests`
-- Single SPM dependency: WhisperKit (≥0.8.0, from `https://github.com/argmaxinc/WhisperKit.git`).
 - No CI, no lint config yet.
 - **Pre-push hook**: `gitleaks detect` runs before every push. Blocked push = fix secrets first.
 
@@ -42,34 +41,38 @@ This is the **voice check-in MVP** — the first product-feature iteration after
 ```
 sift/
   siftApp.swift           — @main entry, sets up SwiftData ModelContainer for Session + PracticeAttempt
-  ContentView.swift       — TabView with "Check In" and "History" tabs
+  ContentView.swift       — TabView with "Record" and "History" tabs
   Models/
-    Session.swift         — @Model: one voice check-in, transcript + duration + attempts relationship
+    Session.swift         — @Model: one voice check-in, transcript + audio/transcription durations + geminiRationale/geminiModelUsed/geminiConfidence + cascade-delete attempts relationship
     PracticeAttempt.swift — @Model: one practice trial, linked to session, with helpfulness rating
     PracticeLibrary.swift — Practice struct + 10 curated practices + keyword matcher
   Services/
     AudioRecorderService.swift  — AVAudioRecorder (PCM 16kHz mono WAV, temp file)
     TranscriptionService.swift  — WhisperKit wrapper, loads "openai_whisper-base.en" model
+    GeminiService.swift         — GoogleGenerativeAI wrapper, two-tier Flash/Pro model routing, structured JSON response schema, builds prompts from transcript + library + user history
+    Secrets.swift               — Gemini API key (committed; listed in .gitignore)
   ViewModels/
-    RecordingViewModel.swift    — orchestrator: owns both services, manages RecordingState enum
+    RecordingViewModel.swift    — orchestrator: owns AudioRecorderService, uses TranscriptionService + GeminiService, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
   Views/
     RecordingScreen.swift       — record button, audio level meter, delegates to flow views
-    SuggestionView.swift        — transcript display + 2–3 practice cards with "Helped before" badge
-    ReflectionView.swift        — "Did you try it?" → thumbs up/down → optional notes → save
+    AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
+    SuggestionView.swift        — transcript display + Gemini rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
+    ReflectionView.swift        — "Did you try it?" → thumbs up/down → optional notes → save/skip
     HistoryScreen.swift         — SwiftData @Query list of past sessions, swipe to delete
-    SessionDetailView.swift     — full transcript + practice attempts with helpfulness ratings
+    SessionDetailView.swift     — full transcript + practice attempts with helpfulness ratings + Gemini metadata
 siftTests/
     TestHelpers.swift                      — in-memory SwiftData container factory
     Models/
       PracticeLibraryTests.swift           — keyword matching + library integrity
-      SessionTests.swift                   — model defaults
+      SessionTests.swift                   — model defaults + Gemini fields
       PracticeAttemptTests.swift           — model defaults
-      SwiftDataTests.swift                 — cascade delete + predicate filtering
+      SwiftDataTests.swift                 — cascade delete + predicate filtering + Gemini persistence round-trip
     ViewModels/
-      RecordingStateTests.swift            — enum equality
-      RecordingViewModelTests.swift        — state transitions + persistence + ranking
+      RecordingStateTests.swift            — enum equality for all cases
+      RecordingViewModelTests.swift        — state transitions + persistence + ranking + Gemini integration flow
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality
+      GeminiServiceTests.swift             — error descriptions + prompt construction + retryable error detection
 siftUITests/
     siftUITests.swift                      — app launch + tab navigation smoke test
 ```
