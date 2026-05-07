@@ -4,6 +4,10 @@ import Testing
 
 struct GeminiServiceTests {
 
+    init() {
+        TestHelpers.setupPractices()
+    }
+
     @Test func errorApiKeyMissingDescription() {
         let error = GeminiError.apiKeyMissing
         #expect(error.errorDescription == "Gemini API key not configured")

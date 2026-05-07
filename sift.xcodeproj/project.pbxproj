@@ -11,6 +11,8 @@
 		3FE5FAD42FA73DB0009B3BE5 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FAB72FA73DB0009B3BE5 /* WhisperKit */; };
 		3FE5FAD82FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */; };
 		3FE5FAD92FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */; };
+		3FE5FADA2FA73DB0009B3BE5 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FADD2FA73DB0009B3BE5 /* Yams */; };
+		3FE5FADB2FA73DB0009B3BE5 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE5FADD2FA73DB0009B3BE5 /* Yams */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +63,7 @@
 			files = (
 				3FE5FAB52FA73DB0009B3BE5 /* WhisperKit in Frameworks */,
 				3FE5FAD82FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */,
+				3FE5FADA2FA73DB0009B3BE5 /* Yams in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,6 +73,7 @@
 			files = (
 				3FE5FAD42FA73DB0009B3BE5 /* WhisperKit in Frameworks */,
 				3FE5FAD92FA73DB0009B3BE5 /* GoogleGenerativeAI in Frameworks */,
+				3FE5FADB2FA73DB0009B3BE5 /* Yams in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +129,7 @@
 			packageProductDependencies = (
 				3FE5FAB72FA73DB0009B3BE5 /* WhisperKit */,
 				3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */,
+				3FE5FADD2FA73DB0009B3BE5 /* Yams */,
 			);
 			productName = sift;
 			productReference = 3FE5FAA72FA73DAF009B3BE5 /* sift.app */;
@@ -149,6 +154,7 @@
 			packageProductDependencies = (
 				3FE5FAB72FA73DB0009B3BE5 /* WhisperKit */,
 				3FE5FAD72FA73DB0009B3BE5 /* GoogleGenerativeAI */,
+				3FE5FADD2FA73DB0009B3BE5 /* Yams */,
 			);
 			productName = siftTests;
 			productReference = 3FE5FAC02FA73DB0009B3BE5 /* siftTests.xctest */;
@@ -208,6 +214,7 @@
 			packageReferences = (
 				3FE5FAB62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				3FE5FAD62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "generative-ai-swift" */,
+				3FE5FADC2FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "Yams" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3FE5FAA82FA73DAF009B3BE5 /* Products */;
@@ -584,6 +591,14 @@
 				minimumVersion = 0.2.0;
 			};
 		};
+		3FE5FADC2FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "Yams" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jpsim/Yams.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -596,6 +611,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3FE5FAD62FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "generative-ai-swift" */;
 			productName = GoogleGenerativeAI;
+		};
+		3FE5FADD2FA73DB0009B3BE5 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3FE5FADC2FA73DB0009B3BE5 /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -6,6 +6,10 @@ import Testing
 @MainActor
 struct RecordingViewModelTests {
 
+    init() {
+        TestHelpers.setupPractices()
+    }
+
     private func makeViewModel() throws -> (RecordingViewModel, ModelContainer, TranscriptionService, GeminiService) {
         let container = try TestHelpers.makeContainer()
         let transcriptionService = TranscriptionService()
