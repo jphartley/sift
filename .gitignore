@@ -43,5 +43,8 @@ fastlane/screenshots/**/*.png
 # Secrets
 Secrets.swift
 
+# Codex local tooling
+.codex/
+
 # Playgrounds
 playground.xcworkspace
