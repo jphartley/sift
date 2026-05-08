@@ -38,20 +38,23 @@ final class GeminiService: RecommendationClient {
 
     private let promptBuilder: GeminiPromptBuilder
     private let router: GeminiRecommendationRouter
+    private let apiKeyProvider: () -> String
 
     init(
         promptBuilder: GeminiPromptBuilder = GeminiPromptBuilder(),
-        router: GeminiRecommendationRouter = GeminiRecommendationRouter(requester: LiveGeminiModelRequester())
+        router: GeminiRecommendationRouter = GeminiRecommendationRouter(requester: LiveGeminiModelRequester()),
+        apiKeyProvider: @escaping () -> String = { Secrets.geminiApiKey }
     ) {
         self.promptBuilder = promptBuilder
         self.router = router
+        self.apiKeyProvider = apiKeyProvider
     }
 
     func recommend(
         transcript: String,
         history: [SessionHistoryEntry]
     ) async throws -> RecommendationResult {
-        let key = Secrets.geminiApiKey
+        let key = apiKeyProvider()
         guard !key.isEmpty else {
             throw GeminiError.apiKeyMissing
         }

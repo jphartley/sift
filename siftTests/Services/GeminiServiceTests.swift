@@ -74,4 +74,32 @@ struct GeminiServiceTests {
         let key = Secrets.geminiApiKey
         #expect(type(of: key) == String.self)
     }
+
+    @Test func emptyApiKeyFailsBeforeRequesterIsCalled() async {
+        let requester = TrackingGeminiRequester()
+        let service = GeminiService(
+            router: GeminiRecommendationRouter(requester: requester),
+            apiKeyProvider: { "" }
+        )
+
+        do {
+            _ = try await service.recommend(transcript: "I feel tense", history: [])
+            #expect(Bool(false), "Expected missing API key error")
+        } catch let error as GeminiError {
+            #expect(error == .apiKeyMissing)
+        } catch {
+            #expect(Bool(false), "Expected GeminiError.apiKeyMissing")
+        }
+
+        #expect(requester.didRequest == false)
+    }
+}
+
+private final class TrackingGeminiRequester: GeminiModelRequesting {
+    var didRequest = false
+
+    func request(prompt: String, apiKey: String, modelName: String) async throws -> String {
+        didRequest = true
+        return "{}"
+    }
 }

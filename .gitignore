@@ -42,6 +42,9 @@ fastlane/screenshots/**/*.png
 
 # Secrets
 Secrets.swift
+!sift/Services/Secrets.swift
+sift/Services/GeminiAPIKey.local
+sift/Services/Secrets.swift.local-backup
 
 # Codex local tooling
 .codex/

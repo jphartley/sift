@@ -60,7 +60,8 @@ sift/
     GeminiPromptBuilder.swift   — Builds prompts from transcript + library + user history
     GeminiRecommendationParser.swift — Decodes and validates structured Gemini JSON responses
     GeminiRecommendationRouter.swift — GoogleGenerativeAI request boundary + Flash/Pro routing + retry classification
-    Secrets.swift.example       — Template for local Gemini API key; real Secrets.swift is gitignored
+    Secrets.swift               — Checked-in safe Gemini API key fallback; reads ignored GeminiAPIKey.local in debug builds
+    GeminiAPIKey.local.example  — Template for ignored local Gemini API key text file
   ViewModels/
     RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
     HistoryViewModel.swift      — history deletion state owner, routes deletes through SessionStore and surfaces delete failures
@@ -84,7 +85,7 @@ siftTests/
       HistoryViewModelTests.swift          — fake-backed history deletion success and failure-path tests
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality
-      GeminiServiceTests.swift             — recommendation data/error basics + secrets access
+      GeminiServiceTests.swift             — recommendation data/error basics + safe secret fallback behavior
       GeminiPromptBuilderTests.swift       — prompt construction
       GeminiRecommendationParserTests.swift — structured response parsing and validation
       GeminiRecommendationRouterTests.swift — Flash/Pro routing + retryable error detection

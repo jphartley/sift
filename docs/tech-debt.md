@@ -25,24 +25,6 @@ Suggested direction:
 - Keep `Try This` as the only action button for selecting a practice.
 - Add an interaction test if the UI grows beyond smoke coverage.
 
-### Track and cancel async work
-
-`RecordingViewModel` starts polling and analysis tasks without storing task handles. The returned tasks help tests wait for async work, but production still does not cancel in-flight work on view disappearance or repeated setup.
-
-Suggested direction:
-- Store task handles for recording meter polling and analysis.
-- Cancel existing tasks before starting replacements.
-- Consider a teardown hook from `RecordingScreen`.
-
-### Clarify local secret setup
-
-Production code requires a local ignored `Secrets.swift`, while the repo commits only `Secrets.swift.example`. A fresh clone may fail to build until the user creates the real file.
-
-Suggested direction:
-- Document first-run setup clearly in `README` or `docs/`.
-- Consider a checked-in debug-safe fallback that compiles but returns an empty API key.
-- Keep real keys ignored.
-
 ### Reduce repeated visual styling
 
 Several SwiftUI views repeat gray rounded panels, card padding, and basic metadata row styling. This is not painful yet, but it will get noisy as the UI evolves.
