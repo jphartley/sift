@@ -1,11 +1,9 @@
 ## Purpose
 Define how the bundled YAML practice library is loaded, decoded, and validated.
-
 ## Requirements
-
 ### Requirement: System loads practices from YAML resource file
 
-The system SHALL load wellness practice definitions from a bundled YAML resource file (`practices.yaml`) at app launch. Each practice SHALL have an id, name, category, keywords, description, and duration in minutes.
+The system SHALL load wellness practice definitions from a bundled YAML resource file (`practices.yaml`) at app launch. Each practice SHALL have an id, name, category, labels, best-fit situations, keywords, summary, steps, why-it-helps explanation, duration in minutes, intensity, and neutral avoid-when guidance.
 
 #### Scenario: YAML file loads successfully
 
@@ -27,11 +25,11 @@ The system SHALL load wellness practice definitions from a bundled YAML resource
 
 ### Requirement: Practice struct supports YAML decoding
 
-The Practice struct SHALL conform to Decodable with CodingKeys mapping snake_case YAML keys (e.g., `duration_minutes`) to camelCase Swift properties (e.g., `durationMinutes`).
+The Practice struct SHALL conform to Decodable with CodingKeys mapping snake_case YAML keys (e.g., `duration_minutes`, `best_for`, `why_it_helps`, `avoid_when`) to camelCase Swift properties (e.g., `durationMinutes`, `bestFor`, `whyItHelps`, `avoidWhen`).
 
 #### Scenario: Practice decodes from valid YAML
 
-- **WHEN** a YAML representation of a practice contains id, name, category, keywords, description, and duration_minutes
+- **WHEN** a YAML representation of a practice contains id, name, category, labels, best_for, keywords, summary, steps, why_it_helps, duration_minutes, intensity, and avoid_when
 - **THEN** the system SHALL successfully decode it into a Practice struct with all fields populated
 
 #### Scenario: YAML contains extra unknown keys
@@ -41,15 +39,27 @@ The Practice struct SHALL conform to Decodable with CodingKeys mapping snake_cas
 
 ### Requirement: Practice library is validated at test time
 
-The system SHALL include a unit test that loads the bundled `practices.yaml` and asserts it decodes without errors and contains at least the expected number of practices.
+The system SHALL include unit tests that load the bundled `practices.yaml` and assert it decodes without errors, contains practices, and includes non-empty required metadata for each bundled practice.
 
 #### Scenario: Bundled YAML passes validation
 
 - **WHEN** the validation test runs
 - **THEN** the system SHALL decode the YAML file without throwing an error
 - **THEN** the system SHALL assert the decoded practice list is non-empty
+- **THEN** the system SHALL assert each decoded practice has non-empty keywords, labels, best-fit situations, summary, steps, why-it-helps explanation, and intensity
 
 #### Scenario: Test catches malformed YAML
 
 - **WHEN** a developer introduces a syntax error in `practices.yaml`
 - **THEN** the validation test SHALL fail with a decoding error
+
+### Requirement: Practice library includes enriched initial categories
+
+The bundled practice library SHALL include enriched practices for the first completed categories from the planning process: Breathwork, Meditation, Grounding, and Movement.
+
+#### Scenario: Completed category practices are bundled
+
+- **WHEN** the bundled YAML practice library is decoded
+- **THEN** the resulting practice list SHALL include practices whose categories include Breathwork, Meditation, Grounding, and Movement
+- **THEN** those practices SHALL use the richer executable schema rather than the legacy description field
+

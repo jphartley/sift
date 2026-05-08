@@ -40,20 +40,33 @@ struct RecordingStateTests {
         #expect(a == b)
     }
 
+    @Test func practicingWithSameValuesAreEqual() async {
+        let practice = Practice.all[0]
+        let a = RecordingState.practicing(practice: practice, relevance: "Relevant")
+        let b = RecordingState.practicing(practice: practice, relevance: "Relevant")
+        #expect(a == b)
+    }
+
+    @Test func practicingWithDifferentValuesAreNotEqual() async {
+        let a = RecordingState.practicing(practice: Practice.all[0], relevance: "Relevant")
+        let b = RecordingState.practicing(practice: Practice.all[1], relevance: "Different")
+        #expect(a != b)
+    }
+
     @Test func reflectingWithSameValuesAreEqual() async {
-        let a = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Breathe in", relevance: "Relevant")
-        let b = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Breathe in", relevance: "Relevant")
+        let a = RecordingState.reflecting(practiceName: "Box Breathing")
+        let b = RecordingState.reflecting(practiceName: "Box Breathing")
         #expect(a == b)
     }
 
     @Test func reflectingWithDifferentValuesAreNotEqual() async {
-        let a = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Breathe in", relevance: "Relevant")
-        let b = RecordingState.reflecting(practiceName: "Body Scan", practiceDescription: "Scan your body", relevance: "Different")
+        let a = RecordingState.reflecting(practiceName: "Box Breathing")
+        let b = RecordingState.reflecting(practiceName: "Body Scan")
         #expect(a != b)
     }
 
     @Test func reflectingNotEqualToSuggesting() async {
-        let a = RecordingState.reflecting(practiceName: "Box Breathing", practiceDescription: "Desc", relevance: "Rel")
+        let a = RecordingState.reflecting(practiceName: "Box Breathing")
         let b = RecordingState.suggesting(transcript: "hello", practices: [], rationale: "", wasEscalated: false, relevanceByID: [:])
         #expect(a != b)
     }

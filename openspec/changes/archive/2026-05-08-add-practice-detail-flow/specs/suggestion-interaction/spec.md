@@ -1,6 +1,5 @@
-## Purpose
-Define how practice suggestion and reflection screens behave when users review recommendations, expand practice details, choose a practice, or navigate back.
-## Requirements
+## MODIFIED Requirements
+
 ### Requirement: Practice cards use accordion pattern with separate commit action
 
 The system SHALL present practice cards as expandable items. A collapsed card SHALL show the practice name, category badge, duration, previously-helpful badge (if applicable), and the first two lines of the summary. An expanded card SHALL additionally show the full summary text, full Gemini relevance text, and a "Try This" button. Only one card MAY be expanded at a time. Tapping "Try This" SHALL open a practice detail page and SHALL NOT record a practice attempt.
@@ -31,18 +30,6 @@ The system SHALL present practice cards as expandable items. A collapsed card SH
 - **THEN** the summary SHALL be fully visible with no line limit
 - **THEN** the Gemini relevance text (if available) SHALL be fully visible with no line limit
 
-### Requirement: Suggestion screen is scrollable
-
-The system SHALL render the suggestion screen content inside a scroll view so that all content is accessible regardless of screen size or text length.
-
-#### Scenario: Long content is scrollable
-- **WHEN** the suggestion screen content exceeds the available viewport height
-- **THEN** the user SHALL be able to scroll vertically to see all content
-
-#### Scenario: Short content fills naturally
-- **WHEN** the suggestion screen content fits within the available viewport
-- **THEN** the layout SHALL fill the space naturally without forced scrolling
-
 ### Requirement: Reflection screen shows practice context
 
 The system SHALL display minimal context for the selected completed practice on the reflection screen before asking whether the practice helped.
@@ -71,6 +58,8 @@ The system SHALL provide a way to return from the practice detail page to the su
 - **WHEN** the user has tapped "I did this" from the practice detail page
 - **THEN** the system SHALL show helpfulness reflection
 - **THEN** the old "Did you try...?" confirmation phase SHALL NOT be visible
+
+## ADDED Requirements
 
 ### Requirement: Practice detail page presents actionable practice content
 
@@ -117,4 +106,3 @@ The system SHALL show a subtle, non-red safety note when the selected practice h
 #### Scenario: Practice has no note-worthy guidance
 - **WHEN** the selected practice is low or medium intensity and has no avoid-when values
 - **THEN** the practice detail page SHALL omit the safety note
-

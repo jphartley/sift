@@ -226,7 +226,7 @@ struct RecordingViewModelTests {
         #expect(viewModel.audioLevel == -24)
     }
 
-    @Test func logPracticeSetsReflectingWithDescriptionAndRelevance() {
+    @Test func selectPracticeOpensPracticeDetailWithoutLoggingAttempt() {
         let (viewModel, _, _, _, _) = makeViewModel()
 
         guard let practice = Practice.all.first(where: { $0.id == "box-breathing" }) else {
@@ -235,20 +235,19 @@ struct RecordingViewModelTests {
         }
 
         viewModel.pendingSession = Session(transcript: "I feel anxious")
-        viewModel.logPractice(practice: practice, relevance: "Breathing helps regulate your nervous system")
+        viewModel.selectPractice(practice: practice, relevance: "Breathing helps regulate your nervous system")
 
-        guard case .reflecting(let name, let desc, let rel) = viewModel.state else {
-            #expect(Bool(false), "Expected .reflecting state")
+        guard case .practicing(let selectedPractice, let relevance) = viewModel.state else {
+            #expect(Bool(false), "Expected .practicing state")
             return
         }
-        #expect(name == "Box Breathing")
-        #expect(desc == practice.summary)
-        #expect(rel == "Breathing helps regulate your nervous system")
-        #expect(viewModel.pendingSession?.attempts.count == 1)
-        #expect(viewModel.currentAttempt?.practiceID == "box-breathing")
+        #expect(selectedPractice == practice)
+        #expect(relevance == "Breathing helps regulate your nervous system")
+        #expect(viewModel.pendingSession?.attempts.isEmpty == true)
+        #expect(viewModel.currentAttempt == nil)
     }
 
-    @Test func logPracticeWithNilRelevanceUsesEmptyString() {
+    @Test func selectPracticeWithNilRelevanceUsesEmptyString() {
         let (viewModel, _, _, _, _) = makeViewModel()
 
         guard let practice = Practice.all.first(where: { $0.id == "stretch-break" }) else {
@@ -257,13 +256,46 @@ struct RecordingViewModelTests {
         }
 
         viewModel.pendingSession = Session(transcript: "test")
-        viewModel.logPractice(practice: practice, relevance: nil)
+        viewModel.selectPractice(practice: practice, relevance: nil)
 
-        guard case .reflecting(_, _, let rel) = viewModel.state else {
+        guard case .practicing(_, let relevance) = viewModel.state else {
+            #expect(Bool(false), "Expected .practicing state")
+            return
+        }
+        #expect(relevance == "")
+    }
+
+    @Test func completeSelectedPracticeLogsAttemptAndOpensReflection() {
+        let (viewModel, _, _, _, _) = makeViewModel()
+
+        guard let practice = Practice.all.first(where: { $0.id == "box-breathing" }) else {
+            #expect(Bool(false), "Practice not found")
+            return
+        }
+
+        viewModel.pendingSession = Session(transcript: "I feel anxious")
+        viewModel.selectPractice(practice: practice, relevance: "Breathing helps")
+        viewModel.completeSelectedPractice()
+
+        guard case .reflecting(let name) = viewModel.state else {
             #expect(Bool(false), "Expected .reflecting state")
             return
         }
-        #expect(rel == "")
+        #expect(name == "Box Breathing")
+        #expect(viewModel.pendingSession?.attempts.count == 1)
+        #expect(viewModel.currentAttempt?.practiceID == "box-breathing")
+        #expect(viewModel.currentAttempt?.wasHelpful == nil)
+    }
+
+    @Test func completeSelectedPracticeDoesNothingOutsidePracticeDetail() {
+        let (viewModel, _, _, _, _) = makeViewModel()
+        viewModel.pendingSession = Session(transcript: "I feel anxious")
+        viewModel.state = .suggesting(transcript: "I feel anxious", practices: [], rationale: "", wasEscalated: false, relevanceByID: [:])
+
+        viewModel.completeSelectedPractice()
+
+        #expect(viewModel.pendingSession?.attempts.isEmpty == true)
+        #expect(viewModel.currentAttempt == nil)
     }
 
     @Test func completeReflectionSavesSessionAndResetsState() {
@@ -381,7 +413,7 @@ struct RecordingViewModelTests {
         #expect(message.contains("Gemini did not recommend any practices"))
     }
 
-    @Test func dismissPracticeReturnsToSuggestingWithOriginalData() {
+    @Test func dismissPracticeReturnsToSuggestingWithOriginalDataWithoutLoggingAttempt() {
         let (viewModel, _, _, _, _) = makeViewModel()
         let result = RecommendationResult(
             rationale: "Test rationale",
@@ -391,9 +423,9 @@ struct RecordingViewModelTests {
             wasEscalated: false
         )
         let session = Session(transcript: "I feel anxious")
-        session.attempts.append(PracticeAttempt(practiceID: "box-breathing", practiceName: "Box Breathing"))
         viewModel.pendingSession = session
         viewModel.lastRecommendationResult = result
+        viewModel.selectPractice(practice: Practice.all[0], relevance: "Helps with anxiety")
 
         viewModel.dismissPractice()
 
@@ -408,6 +440,29 @@ struct RecordingViewModelTests {
         #expect(practices[0].id == "box-breathing")
         #expect(relevanceByID["box-breathing"] == "Helps with anxiety")
         #expect(session.attempts.isEmpty)
+    }
+
+    @Test func skipReflectionPersistsCompletedAttemptWithNilHelpfulness() {
+        let sessionStore = FakeSessionStore()
+        let (viewModel, _, _, _, _) = makeViewModel(sessionStore: sessionStore)
+
+        guard let practice = Practice.all.first(where: { $0.id == "box-breathing" }) else {
+            #expect(Bool(false), "Practice not found")
+            return
+        }
+
+        viewModel.pendingSession = Session(transcript: "I feel anxious")
+        viewModel.selectPractice(practice: practice, relevance: "Breathing helps")
+        viewModel.completeSelectedPractice()
+
+        viewModel.completeReflection(wasHelpful: nil, notes: nil)
+
+        #expect(sessionStore.savedSessions.count == 1)
+        #expect(sessionStore.savedSessions[0].attempts.count == 1)
+        #expect(sessionStore.savedSessions[0].attempts[0].practiceID == "box-breathing")
+        #expect(sessionStore.savedSessions[0].attempts[0].wasHelpful == nil)
+        #expect(sessionStore.savedSessions[0].attempts[0].notes == nil)
+        #expect(viewModel.state == .ready)
     }
 }
 

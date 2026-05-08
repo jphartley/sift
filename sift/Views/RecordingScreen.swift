@@ -38,19 +38,23 @@ struct RecordingScreen: View {
                             relevanceByID: relevanceByID,
                             previouslyHelpfulIDs: previouslyHelpfulIDs(),
                             onSelect: { practice in
-                                viewModel.logPractice(practice: practice, relevance: relevanceByID[practice.id])
+                                viewModel.selectPractice(practice: practice, relevance: relevanceByID[practice.id])
                             },
                             onSkip: { viewModel.skipSuggestions() }
                         )
-                    case .reflecting(let practiceName, let practiceDescription, let relevance):
+                    case .practicing(let practice, let relevance):
+                        PracticeDetailView(
+                            practice: practice,
+                            relevance: relevance,
+                            onBack: { viewModel.dismissPractice() },
+                            onComplete: { viewModel.completeSelectedPractice() }
+                        )
+                    case .reflecting(let practiceName):
                         ReflectionView(
                             practiceName: practiceName,
-                            practiceDescription: practiceDescription,
-                            relevance: relevance,
                             onSave: { wasHelpful, notes in
                                 viewModel.completeReflection(wasHelpful: wasHelpful, notes: notes)
-                            },
-                            onDismiss: { viewModel.dismissPractice() }
+                            }
                         )
                     case .error(let message):
                         errorView(message) {

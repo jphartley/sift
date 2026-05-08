@@ -32,6 +32,10 @@ If a task fails or you are stuck:
 
 This is the **voice check-in MVP** — the first product-feature iteration after the transcription validation prototype. The app's core loop: record voice note → transcribe on-device with WhisperKit → analyze transcript with Gemini (two-tier Flash/Pro model routing) → get 2–3 AI-curated wellness practice suggestions with rationale and relevance scores → try one → reflect on helpfulness. Session and practice attempt history persisted via SwiftData and fed back to Gemini as context. HealthKit and full conversational memory are out of scope.
 
+## Product principles
+
+- Practices should be offered as adaptable invitations, not dogmatic instructions. Sift can suggest one good way into a practice, but experienced users may use their own version. Prefer wording like "One way to practice" over "How to do it" when presenting steps.
+
 ## Build & run
 
 - Open `sift.xcodeproj` in Xcode (built with Xcode 26.4.1).
@@ -63,13 +67,14 @@ sift/
     Secrets.swift               — Checked-in safe Gemini API key fallback; reads bundled ignored GeminiAPIKey.local at runtime
     GeminiAPIKey.local.example  — Template for ignored local Gemini API key text file
   ViewModels/
-    RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
+    RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/practicing/reflecting/error)
     HistoryViewModel.swift      — history deletion state owner, routes deletes through SessionStore and surfaces delete failures
   Views/
     RecordingScreen.swift       — record button, audio level meter, delegates to flow views, tears down in-flight check-in work on disappearance
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
     SuggestionView.swift        — transcript display + Gemini rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
-    ReflectionView.swift        — "Did you try it?" → thumbs up/down → optional notes → save/skip
+    PracticeDetailView.swift    — selected practice page with rationale, summary, "One way to practice" steps, gentle safety note, and sticky "I did this" action
+    ReflectionView.swift        — helpfulness thumbs up/down → optional notes → save/skip
     HistoryScreen.swift         — SwiftData @Query list of past sessions, swipe to delete via HistoryViewModel
     SessionDetailView.swift     — full transcript + practice attempts with helpfulness ratings + Gemini metadata
 siftTests/

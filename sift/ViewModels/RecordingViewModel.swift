@@ -8,7 +8,8 @@ enum RecordingState: Equatable {
     case transcribing
     case analyzing
     case suggesting(transcript: String, practices: [Practice], rationale: String, wasEscalated: Bool, relevanceByID: [String: String])
-    case reflecting(practiceName: String, practiceDescription: String, relevance: String)
+    case practicing(practice: Practice, relevance: String)
+    case reflecting(practiceName: String)
     case error(String)
 }
 
@@ -126,16 +127,17 @@ final class RecordingViewModel {
         return task
     }
 
-    func logPractice(practice: Practice, relevance: String?) {
+    func selectPractice(practice: Practice, relevance: String?) {
+        state = .practicing(practice: practice, relevance: relevance ?? "")
+    }
+
+    func completeSelectedPractice() {
         guard let session = pendingSession else { return }
+        guard case .practicing(let practice, _) = state else { return }
         let attempt = PracticeAttempt(practiceID: practice.id, practiceName: practice.name)
         session.attempts.append(attempt)
         currentAttempt = attempt
-        state = .reflecting(
-            practiceName: practice.name,
-            practiceDescription: practice.summary,
-            relevance: relevance ?? ""
-        )
+        state = .reflecting(practiceName: practice.name)
     }
 
     func completeReflection(wasHelpful: Bool?, notes: String?) {

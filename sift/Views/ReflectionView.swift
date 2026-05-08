@@ -2,93 +2,23 @@ import SwiftUI
 
 struct ReflectionView: View {
     let practiceName: String
-    let practiceDescription: String
-    let relevance: String
     let onSave: (Bool?, String?) -> Void
-    let onDismiss: () -> Void
 
-    @State private var didTry: Bool? = nil
     @State private var wasHelpful: Bool? = nil
     @State private var notes: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            if didTry == nil {
-                tryQuestion
-            } else if didTry == true {
-                reflectionForm
-            }
-        }
-        .padding()
-    }
-
-    private var tryQuestion: some View {
-        VStack(spacing: 24) {
-            HStack {
-                Button("Back") {
-                    onDismiss()
-                }
-                .font(.subheadline)
-                Spacer()
-            }
-
             VStack(alignment: .leading, spacing: 12) {
                 Text(practiceName)
                     .font(.headline)
 
-                Text(practiceDescription)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                if !relevance.isEmpty {
-                    Text(relevance)
-                        .font(.caption)
-                        .foregroundStyle(.indigo)
-                        .padding(.top, 2)
-                }
-
                 Divider()
             }
 
-            Text("Did you try \(practiceName)?")
-                .font(.title3)
-
-            HStack(spacing: 24) {
-                Button {
-                    didTry = true
-                } label: {
-                    VStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.green)
-                        Text("Yes")
-                            .font(.headline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    onDismiss()
-                } label: {
-                    VStack(spacing: 8) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.red)
-                        Text("No")
-                            .font(.headline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-            }
+            reflectionForm
         }
+        .padding()
     }
 
     private var reflectionForm: some View {
