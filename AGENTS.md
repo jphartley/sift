@@ -53,12 +53,13 @@ sift/
     PracticeAttempt.swift — @Model: one practice trial, linked to session, with helpfulness rating
     PracticeLibrary.swift — Practice struct + YAML-backed 10-practice library loader
   Services/
+    CheckInServices.swift      — Protocol boundaries for audio recording, transcription, recommendations, and session persistence/history; includes SwiftDataSessionStore
     AudioRecorderService.swift  — AVAudioRecorder (PCM 16kHz mono WAV, temp file)
     TranscriptionService.swift  — WhisperKit wrapper, loads "openai_whisper-base.en" model
     GeminiService.swift         — GoogleGenerativeAI wrapper, two-tier Flash/Pro model routing, structured JSON response schema, builds prompts from transcript + library + user history
     Secrets.swift.example       — Template for local Gemini API key; real Secrets.swift is gitignored
   ViewModels/
-    RecordingViewModel.swift    — orchestrator: owns AudioRecorderService, uses TranscriptionService + GeminiService, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
+    RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
   Views/
     RecordingScreen.swift       — record button, audio level meter, delegates to flow views
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
@@ -69,13 +70,13 @@ sift/
 siftTests/
     TestHelpers.swift                      — in-memory SwiftData container factory
     Models/
-      PracticeLibraryTests.swift           — keyword matching + library integrity
+      PracticeLibraryTests.swift           — YAML decoding + library integrity
       SessionTests.swift                   — model defaults + Gemini fields
       PracticeAttemptTests.swift           — model defaults
       SwiftDataTests.swift                 — cascade delete + predicate filtering + Gemini persistence round-trip
     ViewModels/
       RecordingStateTests.swift            — enum equality for all cases
-      RecordingViewModelTests.swift        — state transitions + persistence + ranking + Gemini integration flow
+      RecordingViewModelTests.swift        — fake-backed check-in flow, persistence, retry, and failure-path tests
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality
       GeminiServiceTests.swift             — error descriptions + prompt construction + retryable error detection

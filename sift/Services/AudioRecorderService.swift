@@ -2,7 +2,7 @@ import Foundation
 import AVFoundation
 
 @Observable
-final class AudioRecorderService {
+final class AudioRecorderService: AudioRecording {
     private var audioRecorder: AVAudioRecorder?
     private var timer: Timer?
     var isRecording = false

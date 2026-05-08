@@ -35,7 +35,7 @@ enum GeminiError: LocalizedError, Equatable {
 }
 
 @Observable
-final class GeminiService {
+final class GeminiService: RecommendationClient {
 
     private static let flashModel = "gemini-3-flash-preview"
     private static let proModel = "gemini-3.1-pro-preview"

@@ -10,7 +10,7 @@ enum ModelState: Equatable {
 }
 
 @Observable
-final class TranscriptionService {
+final class TranscriptionService: TranscriptionClient {
     private var whisperKit: WhisperKit?
     var modelState: ModelState = .notLoaded
 

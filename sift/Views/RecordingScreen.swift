@@ -14,7 +14,11 @@ struct RecordingScreen: View {
                 case .downloading, .loading, .notLoaded:
                     loadingView
                 case .failed(let message):
-                    errorView(message)
+                    errorView(message) {
+                        Task {
+                            await transcriptionService.loadModel()
+                        }
+                    }
                 case .ready:
                     switch viewModel.state {
                     case .idle, .loadingModel, .ready:
@@ -49,7 +53,9 @@ struct RecordingScreen: View {
                             onDismiss: { viewModel.dismissPractice() }
                         )
                     case .error(let message):
-                        errorView(message)
+                        errorView(message) {
+                            viewModel.retryAnalysis()
+                        }
                     }
                 }
             }
@@ -57,7 +63,11 @@ struct RecordingScreen: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
-            viewModel.configure(modelContext: modelContext, transcriptionService: transcriptionService, geminiService: geminiService)
+            viewModel.configure(
+                sessionStore: SwiftDataSessionStore(modelContext: modelContext),
+                transcriptionService: transcriptionService,
+                recommendationClient: geminiService
+            )
             await viewModel.setup()
         }
     }
@@ -212,7 +222,7 @@ struct RecordingScreen: View {
         }
     }
 
-    private func errorView(_ message: String) -> some View {
+    private func errorView(_ message: String, retry: @escaping () -> Void) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 40))
@@ -222,7 +232,7 @@ struct RecordingScreen: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             Button("Retry") {
-                viewModel.retryAnalysis()
+                retry()
             }
             .buttonStyle(.borderedProminent)
         }

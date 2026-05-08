@@ -1,6 +1,4 @@
 import Foundation
-import SwiftUI
-import SwiftData
 
 enum RecordingState: Equatable {
     case idle
@@ -21,19 +19,27 @@ final class RecordingViewModel {
     var audioLevel: Float = -160
     var lastTranscript: String = ""
 
-    private let audioRecorder = AudioRecorderService()
-    private var transcriptionService: TranscriptionService?
-    private var geminiService: GeminiService?
+    private var audioRecorder: AudioRecording
+    private var transcriptionService: TranscriptionClient?
+    private var recommendationClient: RecommendationClient?
+    private var sessionStore: SessionStore?
     private var currentRecordingURL: URL?
-    private var modelContext: ModelContext?
     var pendingSession: Session?
     var currentAttempt: PracticeAttempt?
     var lastRecommendationResult: RecommendationResult?
 
-    func configure(modelContext: ModelContext, transcriptionService: TranscriptionService, geminiService: GeminiService) {
-        self.modelContext = modelContext
+    init(audioRecorder: AudioRecording = AudioRecorderService()) {
+        self.audioRecorder = audioRecorder
+    }
+
+    func configure(
+        sessionStore: SessionStore,
+        transcriptionService: TranscriptionClient,
+        recommendationClient: RecommendationClient
+    ) {
+        self.sessionStore = sessionStore
         self.transcriptionService = transcriptionService
-        self.geminiService = geminiService
+        self.recommendationClient = recommendationClient
     }
 
     func setup() async {
@@ -67,22 +73,23 @@ final class RecordingViewModel {
         }
     }
 
-    func stopRecording() {
+    @discardableResult
+    func stopRecording() -> Task<Void, Never>? {
         audioRecorder.stopRecording()
         let audioDuration = recordingDuration
         state = .transcribing
 
         guard let recordingURL = currentRecordingURL else {
             state = .error("No recording found")
-            return
+            return nil
         }
 
         guard let transcriptionService else {
             state = .error("Transcription service not configured")
-            return
+            return nil
         }
 
-        Task {
+        let task = Task {
             do {
                 let (text, transcriptionMs) = try await transcriptionService.transcribe(audioURL: recordingURL)
 
@@ -101,30 +108,12 @@ final class RecordingViewModel {
                 state = .analyzing
 
                 let result = try await analyzeAndSuggest(transcript: text)
-
-                pendingSession?.geminiRationale = result.rationale
-                pendingSession?.geminiModelUsed = result.modelUsed
-                pendingSession?.geminiConfidence = result.confidence
-                lastRecommendationResult = result
-
-                let practices = resolvePractices(from: result)
-                var relevanceByID: [String: String] = [:]
-                for (id, relevance) in result.practices {
-                    relevanceByID[id] = relevance
-                }
-
-                state = .suggesting(
-                    transcript: text,
-                    practices: practices,
-                    rationale: result.rationale,
-                    wasEscalated: result.wasEscalated,
-                    relevanceByID: relevanceByID
-                )
+                try applyRecommendationResult(result, transcript: text)
             } catch {
                 state = .error("Analyzing failed: \(error.localizedDescription)")
-                print("[RecordingViewModel] Analysis failed in stopRecording: \(error)")
             }
         }
+        return task
     }
 
     func logPractice(practice: Practice, relevance: String?) {
@@ -140,21 +129,13 @@ final class RecordingViewModel {
     }
 
     func completeReflection(wasHelpful: Bool?, notes: String?) {
-        guard let context = modelContext,
-              let session = pendingSession,
+        guard let session = pendingSession,
               let attempt = currentAttempt else { return }
 
         attempt.wasHelpful = wasHelpful
         attempt.notes = notes
 
-        context.insert(session)
-        try? context.save()
-
-        pendingSession = nil
-        currentAttempt = nil
-        recordingDuration = 0
-        audioLevel = -160
-        state = .ready
+        saveAndReset(session)
     }
 
     func dismissPractice() {
@@ -163,100 +144,110 @@ final class RecordingViewModel {
             return
         }
         let practices = resolvePractices(from: result)
+        guard !practices.isEmpty else {
+            state = .error(GeminiError.emptyPractices.localizedDescription)
+            return
+        }
         currentAttempt = nil
         session.attempts.removeAll()
-        var relevanceByID: [String: String] = [:]
-        for (id, relevance) in result.practices {
-            relevanceByID[id] = relevance
-        }
         state = .suggesting(
             transcript: session.transcript,
             practices: practices,
             rationale: result.rationale,
             wasEscalated: result.wasEscalated,
-            relevanceByID: relevanceByID
+            relevanceByID: relevanceByID(from: result)
         )
     }
 
     func skipSuggestions() {
-        guard let context = modelContext, let session = pendingSession else {
-            state = .ready
-            return
-        }
-
-        context.insert(session)
-        try? context.save()
-
-        pendingSession = nil
-        currentAttempt = nil
-        recordingDuration = 0
-        audioLevel = -160
-        state = .ready
-    }
-
-    func retryAnalysis() {
         guard let session = pendingSession else {
             state = .ready
             return
         }
+
+        saveAndReset(session)
+    }
+
+    @discardableResult
+    func retryAnalysis() -> Task<Void, Never>? {
+        guard let session = pendingSession else {
+            state = .ready
+            return nil
+        }
         let transcript = session.transcript
         state = .analyzing
-        Task {
+        let task = Task {
             do {
                 let result = try await analyzeAndSuggest(transcript: transcript)
-
-                pendingSession?.geminiRationale = result.rationale
-                pendingSession?.geminiModelUsed = result.modelUsed
-                pendingSession?.geminiConfidence = result.confidence
-                lastRecommendationResult = result
-
-                let practices = resolvePractices(from: result)
-                var relevanceByID: [String: String] = [:]
-                for (id, relevance) in result.practices {
-                    relevanceByID[id] = relevance
-                }
-
-                state = .suggesting(
-                    transcript: transcript,
-                    practices: practices,
-                    rationale: result.rationale,
-                    wasEscalated: result.wasEscalated,
-                    relevanceByID: relevanceByID
-                )
+                try applyRecommendationResult(result, transcript: transcript)
             } catch {
                 state = .error("Analyzing failed: \(error.localizedDescription)")
-                print("[RecordingViewModel] Analysis failed in retryAnalysis: \(error)")
             }
         }
+        return task
     }
 
     private func analyzeAndSuggest(transcript: String) async throws -> RecommendationResult {
-        guard let geminiService else {
+        guard let recommendationClient else {
             throw GeminiError.apiKeyMissing
         }
 
-        let history = buildHistoryPayload()
-        return try await geminiService.recommend(transcript: transcript, history: history)
-    }
-
-    private func buildHistoryPayload() -> [SessionHistoryEntry] {
-        guard let context = modelContext else { return [] }
-        let descriptor = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
-        let sessions = (try? context.fetch(descriptor)) ?? []
-
-        return sessions.map { session in
-            let attempt = session.attempts.first
-            return SessionHistoryEntry(
-                timestamp: session.timestamp,
-                transcript: session.transcript,
-                practiceName: attempt?.practiceName,
-                wasHelpful: attempt?.wasHelpful
-            )
-        }
+        let history = try sessionStore?.recommendationHistory() ?? []
+        return try await recommendationClient.recommend(transcript: transcript, history: history)
     }
 
     private func resolvePractices(from result: RecommendationResult) -> [Practice] {
         let allPractices = Dictionary(uniqueKeysWithValues: Practice.all.map { ($0.id, $0) })
         return result.practices.compactMap { allPractices[$0.practiceID] }
+    }
+
+    private func applyRecommendationResult(_ result: RecommendationResult, transcript: String) throws {
+        pendingSession?.geminiRationale = result.rationale
+        pendingSession?.geminiModelUsed = result.modelUsed
+        pendingSession?.geminiConfidence = result.confidence
+        lastRecommendationResult = result
+
+        let practices = resolvePractices(from: result)
+        guard !practices.isEmpty else {
+            throw GeminiError.emptyPractices
+        }
+
+        state = .suggesting(
+            transcript: transcript,
+            practices: practices,
+            rationale: result.rationale,
+            wasEscalated: result.wasEscalated,
+            relevanceByID: relevanceByID(from: result)
+        )
+    }
+
+    private func relevanceByID(from result: RecommendationResult) -> [String: String] {
+        var relevance: [String: String] = [:]
+        for practice in result.practices {
+            relevance[practice.practiceID] = practice.relevance
+        }
+        return relevance
+    }
+
+    private func saveAndReset(_ session: Session) {
+        guard let sessionStore else {
+            state = .error("Session store not configured")
+            return
+        }
+
+        do {
+            try sessionStore.save(session)
+            resetAfterSave()
+        } catch {
+            state = .error("Saving failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func resetAfterSave() {
+        pendingSession = nil
+        currentAttempt = nil
+        recordingDuration = 0
+        audioLevel = -160
+        state = .ready
     }
 }
