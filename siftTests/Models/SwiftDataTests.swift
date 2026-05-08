@@ -41,6 +41,25 @@ struct SwiftDataTests {
         #expect(attempts.isEmpty)
     }
 
+    @Test func sessionStoreDeleteRemovesAttempts() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = SwiftDataSessionStore(modelContext: context)
+
+        let session = Session(transcript: "test")
+        session.attempts.append(PracticeAttempt(practiceID: "a", practiceName: "A"))
+        session.attempts.append(PracticeAttempt(practiceID: "b", practiceName: "B"))
+        context.insert(session)
+        try context.save()
+
+        try store.delete([session])
+
+        let sessions = try context.fetch(FetchDescriptor<Session>())
+        let attempts = try context.fetch(FetchDescriptor<PracticeAttempt>())
+        #expect(sessions.isEmpty)
+        #expect(attempts.isEmpty)
+    }
+
     @Test func wasHelpfulPredicateFiltersCorrectly() throws {
         let container = try makeContainer()
         let context = container.mainContext

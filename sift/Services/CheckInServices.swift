@@ -24,6 +24,7 @@ protocol RecommendationClient: AnyObject {
 protocol SessionStore: AnyObject {
     func recommendationHistory() throws -> [SessionHistoryEntry]
     func save(_ session: Session) throws
+    func delete(_ sessions: [Session]) throws
 }
 
 final class SwiftDataSessionStore: SessionStore {
@@ -50,6 +51,13 @@ final class SwiftDataSessionStore: SessionStore {
 
     func save(_ session: Session) throws {
         modelContext.insert(session)
+        try modelContext.save()
+    }
+
+    func delete(_ sessions: [Session]) throws {
+        for session in sessions {
+            modelContext.delete(session)
+        }
         try modelContext.save()
     }
 }

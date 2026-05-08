@@ -14,15 +14,6 @@ Suggested direction:
 - Introduce summaries before full conversational memory work.
 - Add tests proving the history passed to the recommender is bounded.
 
-### Improve persistence error handling outside the check-in flow
-
-The check-in flow now uses `SessionStore` and surfaces save failures, but `HistoryScreen` still deletes sessions with direct SwiftData calls and `try? modelContext.save()`.
-
-Suggested direction:
-- Decide whether history deletion should use the same `SessionStore` or a dedicated history store.
-- Surface deletion/save failures instead of silently swallowing them.
-- Add tests for failed delete/save behavior if this moves into a testable store.
-
 ## Medium Priority
 
 ### Fix nested button semantics in SuggestionView

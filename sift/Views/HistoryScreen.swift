@@ -4,6 +4,7 @@ import SwiftData
 struct HistoryScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Session.timestamp, order: .reverse) private var sessions: [Session]
+    @State private var viewModel = HistoryViewModel()
 
     var body: some View {
         NavigationStack {
@@ -28,6 +29,26 @@ struct HistoryScreen: View {
                 }
             }
             .navigationTitle("History")
+            .onAppear {
+                viewModel.configure(sessionStore: SwiftDataSessionStore(modelContext: modelContext))
+            }
+            .alert(
+                "Couldn't Delete Check-In",
+                isPresented: Binding(
+                    get: { viewModel.deletionErrorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            viewModel.clearDeletionError()
+                        }
+                    }
+                )
+            ) {
+                Button("OK") {
+                    viewModel.clearDeletionError()
+                }
+            } message: {
+                Text(viewModel.deletionErrorMessage ?? "")
+            }
         }
     }
 
@@ -76,9 +97,6 @@ struct HistoryScreen: View {
     }
 
     private func deleteSessions(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(sessions[index])
-        }
-        try? modelContext.save()
+        viewModel.deleteSessions(at: offsets, from: sessions)
     }
 }

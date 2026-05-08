@@ -53,7 +53,7 @@ sift/
     PracticeAttempt.swift — @Model: one practice trial, linked to session, with helpfulness rating
     PracticeLibrary.swift — Practice struct + YAML-backed 10-practice library loader
   Services/
-    CheckInServices.swift      — Protocol boundaries for audio recording, transcription, recommendations, and session persistence/history; includes SwiftDataSessionStore
+    CheckInServices.swift      — Protocol boundaries for audio recording, transcription, recommendations, and session persistence/history/delete; includes SwiftDataSessionStore
     AudioRecorderService.swift  — AVAudioRecorder (PCM 16kHz mono WAV, temp file)
     TranscriptionService.swift  — WhisperKit wrapper, loads "openai_whisper-base.en" model
     GeminiService.swift         — RecommendationClient facade for Gemini recommendations
@@ -63,12 +63,13 @@ sift/
     Secrets.swift.example       — Template for local Gemini API key; real Secrets.swift is gitignored
   ViewModels/
     RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
+    HistoryViewModel.swift      — history deletion state owner, routes deletes through SessionStore and surfaces delete failures
   Views/
     RecordingScreen.swift       — record button, audio level meter, delegates to flow views
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
     SuggestionView.swift        — transcript display + Gemini rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
     ReflectionView.swift        — "Did you try it?" → thumbs up/down → optional notes → save/skip
-    HistoryScreen.swift         — SwiftData @Query list of past sessions, swipe to delete
+    HistoryScreen.swift         — SwiftData @Query list of past sessions, swipe to delete via HistoryViewModel
     SessionDetailView.swift     — full transcript + practice attempts with helpfulness ratings + Gemini metadata
 siftTests/
     TestHelpers.swift                      — in-memory SwiftData container factory
@@ -76,10 +77,11 @@ siftTests/
       PracticeLibraryTests.swift           — YAML decoding + library integrity
       SessionTests.swift                   — model defaults + Gemini fields
       PracticeAttemptTests.swift           — model defaults
-      SwiftDataTests.swift                 — cascade delete + predicate filtering + Gemini persistence round-trip
+      SwiftDataTests.swift                 — cascade delete + store deletion + predicate filtering + Gemini persistence round-trip
     ViewModels/
       RecordingStateTests.swift            — enum equality for all cases
       RecordingViewModelTests.swift        — fake-backed check-in flow, persistence, retry, and failure-path tests
+      HistoryViewModelTests.swift          — fake-backed history deletion success and failure-path tests
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality
       GeminiServiceTests.swift             — recommendation data/error basics + secrets access

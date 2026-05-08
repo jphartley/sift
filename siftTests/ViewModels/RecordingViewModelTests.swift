@@ -410,18 +410,22 @@ private final class FakeRecommendationClient: RecommendationClient {
 
 private final class FakeSessionStore: SessionStore {
     var savedSessions: [Session] = []
+    var deletedSessions: [Session] = []
     var history: [SessionHistoryEntry]
 
     private let saveError: Error?
+    private let deleteError: Error?
     private let historyError: Error?
 
     init(
         history: [SessionHistoryEntry] = [],
         saveError: Error? = nil,
+        deleteError: Error? = nil,
         historyError: Error? = nil
     ) {
         self.history = history
         self.saveError = saveError
+        self.deleteError = deleteError
         self.historyError = historyError
     }
 
@@ -433,6 +437,11 @@ private final class FakeSessionStore: SessionStore {
     func save(_ session: Session) throws {
         if let saveError { throw saveError }
         savedSessions.append(session)
+    }
+
+    func delete(_ sessions: [Session]) throws {
+        if let deleteError { throw deleteError }
+        deletedSessions.append(contentsOf: sessions)
     }
 }
 
