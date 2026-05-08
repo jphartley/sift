@@ -35,15 +35,6 @@ Suggested direction:
 
 ## Low Priority
 
-### Refresh stale testing documentation and specs
-
-Some older docs/specs still refer to future protocol extraction or old keyword-ranking behavior. The architecture has moved on.
-
-Suggested direction:
-- Update `docs/testing.md` references to protocol extraction as future work.
-- Review `openspec/specs/automated-tests/spec.md` for stale requirements around removed keyword matching/ranking.
-- Keep `AGENTS.md` aligned when architecture changes.
-
 ### Keep OpenSpec archive/spec sync tidy
 
 Archived changes are useful for context, but the main specs should remain the source of truth after a change is archived.

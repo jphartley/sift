@@ -1,25 +1,5 @@
 ## ADDED Requirements
 
-### Requirement: PracticeLibrary keyword matching returns ranked results
-
-The system SHALL have automated tests verifying that `Practice.match(transcript:)` correctly ranks practices by keyword match count.
-
-#### Scenario: Empty transcript returns all practices with zero score
-- **WHEN** the match function receives an empty string
-- **THEN** all practices SHALL appear in the result array with a score of zero
-
-#### Scenario: Single keyword matches one practice
-- **WHEN** the transcript contains only the word "breath"
-- **THEN** Box Breathing and 4-7-8 Breathing SHALL rank highest (both have "breath" as a keyword)
-
-#### Scenario: Short words are ignored
-- **WHEN** the transcript contains only words of 2 or fewer characters
-- **THEN** all practices SHALL score zero
-
-#### Scenario: Multiple keywords compound scoring
-- **WHEN** the transcript contains "anxious stressed tense"
-- **THEN** practices with more matching keywords SHALL rank higher than practices with fewer
-
 ### Requirement: Practice library data is valid
 
 The system SHALL have automated tests verifying the integrity of the curated practice library.
@@ -112,19 +92,6 @@ The system SHALL have automated tests verifying the ViewModel state machine usin
 - **WHEN** a pending Session exists with one attempt logged and dismissPractice is called
 - **THEN** the state SHALL transition to .suggesting
 - **THEN** the Session's attempts SHALL be cleared
-
-### Requirement: Practice ranking boosts previously helpful practices
-
-The system SHALL have automated tests verifying that practices previously marked helpful receive a ranking bonus.
-
-#### Scenario: Previously helpful practice ranks above equal match
-- **WHEN** a PracticeAttempt with wasHelpful true exists for Box Breathing
-- **AND** the transcript matches Box Breathing and 4-7-8 Breathing equally
-- **THEN** Box Breathing SHALL rank above 4-7-8 Breathing
-
-#### Scenario: No helpful history gives no bonus
-- **WHEN** no PracticeAttempts exist
-- **THEN** practice ranking SHALL depend solely on keyword match count
 
 ### Requirement: SwiftData relationship cascade deletes attempts
 

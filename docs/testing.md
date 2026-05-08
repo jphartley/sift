@@ -7,11 +7,11 @@
         │  UI (2)  │  Smoke: app launch, tab navigation
         │  ~12s    │  Framework: XCTest
         ├──────────┤
-        │  INT (8) │  State machine, cascade delete, predicates, ranking
-        │  ~0.07s  │  Framework: Swift Testing + in-memory SwiftData
+        │ INT/API  │  View model flows, SwiftData, Gemini collaborators
+        │  ~0.3s   │  Framework: Swift Testing + fakes/in-memory SwiftData
         ├──────────┤
-        │ UNIT (20)│  Pure functions, model defaults, enum equality
-        │  ~0.03s  │  Framework: Swift Testing, no dependencies
+        │ UNIT/API │  Models, parsing, prompt building, error mapping
+        │  ~0.1s   │  Framework: Swift Testing, no live network
         └──────────┘
 ```
 
@@ -85,15 +85,20 @@ struct RecordingViewModelTests {
 siftTests/
     TestHelpers.swift                      — shared in-memory container factory
     Models/
-        PracticeLibraryTests.swift         — keyword matching (5 tests) + library integrity (3 tests)
-        SessionTests.swift                 — model defaults (3 tests)
-        PracticeAttemptTests.swift         — model defaults (4 tests)
-        SwiftDataTests.swift               — cascade delete + predicate filtering (2 tests)
+        PracticeLibraryTests.swift         — YAML decoding + library integrity
+        SessionTests.swift                 — model defaults + Gemini metadata fields
+        PracticeAttemptTests.swift         — model defaults
+        SwiftDataTests.swift               — cascade delete, session store delete, predicates, Gemini persistence
     ViewModels/
-        RecordingStateTests.swift          — enum equality (4 tests)
-        RecordingViewModelTests.swift      — state transitions + persistence + ranking (5 tests)
+        RecordingStateTests.swift          — enum equality
+        RecordingViewModelTests.swift      — fake-backed check-in flow, persistence, retry, cancellation, failure paths
+        HistoryViewModelTests.swift        — fake-backed history deletion success and failure paths
     Services/
-        TranscriptionServiceTests.swift    — error descriptions + ModelState equality (4 tests)
+        GeminiPromptBuilderTests.swift     — prompt construction without live network
+        GeminiRecommendationParserTests.swift — structured JSON parsing and validation
+        GeminiRecommendationRouterTests.swift — Flash/Pro routing and retry classification
+        GeminiServiceTests.swift           — facade-level errors, result data, safe secret fallback
+        TranscriptionServiceTests.swift    — error descriptions + ModelState equality/idempotence
 siftUITests/
     siftUITests.swift                      — app launch + tab navigation (2 tests)
 ```
@@ -102,7 +107,5 @@ siftUITests/
 
 - `AudioRecorderService` — requires `AVAudioRecorder` and a real microphone
 - `TranscriptionService.loadModel()` / `transcribe()` — requires WhisperKit model download (~150MB) and real audio
-- Full end-to-end check-in flow — requires protocol extraction for dependency injection
-- Edge cases: interrupted recordings, force-quit during save, concurrent sessions
-
-These are gated by a future refactor that extracts protocols for the audio and transcription services.
+- Real Gemini network calls — covered through prompt, parser, router, and facade tests with fake requesters
+- Edge cases: force-quit during save, concurrent sessions, long-term history growth
