@@ -2,17 +2,15 @@ import Foundation
 
 enum Secrets {
     static var geminiApiKey: String {
-        localGeminiApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        geminiApiKey(in: .main)
     }
 
-    private static var localGeminiApiKey: String {
-        #if DEBUG
-        let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .appendingPathComponent("GeminiAPIKey.local")
-        return (try? String(contentsOf: url, encoding: .utf8)) ?? ""
-        #else
-        return ""
-        #endif
+    static func geminiApiKey(in bundle: Bundle) -> String {
+        guard let url = bundle.url(forResource: "GeminiAPIKey", withExtension: "local"),
+              let key = try? String(contentsOf: url, encoding: .utf8) else {
+            return ""
+        }
+
+        return key.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

@@ -119,7 +119,7 @@ The system SHALL create a single Gemini service instance at app launch following
 
 ### Requirement: API key is stored in a gitignored source file
 
-The system SHALL read the Gemini API key from `Secrets.geminiApiKey`. The repository SHALL provide a checked-in, debug-safe default value so the app compiles from a fresh clone without a private key. Real Gemini API keys SHALL remain excluded from version control. A committed template or first-run setup instructions SHALL explain how to configure a local key for real Gemini requests.
+The system SHALL read the Gemini API key from `Secrets.geminiApiKey`. The repository SHALL provide a checked-in, debug-safe default value so the app compiles from a fresh clone without a private key. Real Gemini API keys SHALL remain excluded from version control. A committed template or first-run setup instructions SHALL explain how to configure a local key for real Gemini requests. Local builds SHALL copy the ignored key file into the app bundle when it exists so simulator and device runtime behavior match.
 
 #### Scenario: Fresh clone builds without local key
 
@@ -130,6 +130,7 @@ The system SHALL read the Gemini API key from `Secrets.geminiApiKey`. The reposi
 
 - **WHEN** the developer configures a non-empty local `geminiApiKey` value
 - **THEN** the system SHALL use it for Gemini API requests
+- **THEN** the system SHALL support both simulator and device builds
 
 #### Scenario: API key is missing
 

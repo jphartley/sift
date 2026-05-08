@@ -12,9 +12,10 @@ To enable real Gemini recommendations locally:
 
 1. Copy `sift/Services/GeminiAPIKey.local.example` to `sift/Services/GeminiAPIKey.local`.
 2. Replace `YOUR_GEMINI_API_KEY_HERE` with your Gemini API key.
-3. Keep `sift/Services/GeminiAPIKey.local` uncommitted.
+3. Build and run the app. Xcode copies the ignored local key into the app bundle for both simulator and device builds.
+4. Keep `sift/Services/GeminiAPIKey.local` uncommitted.
 
-`sift/Services/Secrets.swift` is a checked-in safe fallback. Do not put real keys in it.
+`sift/Services/Secrets.swift` is a checked-in safe fallback that reads the bundled local key at runtime. Do not put real keys in it.
 
 ## Build and test
 

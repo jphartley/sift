@@ -75,6 +75,22 @@ struct GeminiServiceTests {
         #expect(type(of: key) == String.self)
     }
 
+    @Test func secretsApiKeyReadsBundledLocalKey() throws {
+        let bundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("bundle")
+        try FileManager.default.createDirectory(at: bundleURL, withIntermediateDirectories: true)
+        try """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0"><dict></dict></plist>
+        """.write(to: bundleURL.appendingPathComponent("Info.plist"), atomically: true, encoding: .utf8)
+        try "\nlocal-key\n".write(to: bundleURL.appendingPathComponent("GeminiAPIKey.local"), atomically: true, encoding: .utf8)
+        let bundle = try #require(Bundle(url: bundleURL))
+
+        #expect(Secrets.geminiApiKey(in: bundle) == "local-key")
+    }
+
     @Test func emptyApiKeyFailsBeforeRequesterIsCalled() async {
         let requester = TrackingGeminiRequester()
         let service = GeminiService(

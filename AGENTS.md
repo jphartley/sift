@@ -60,7 +60,7 @@ sift/
     GeminiPromptBuilder.swift   — Builds prompts from transcript + library + user history
     GeminiRecommendationParser.swift — Decodes and validates structured Gemini JSON responses
     GeminiRecommendationRouter.swift — GoogleGenerativeAI request boundary + Flash/Pro routing + retry classification
-    Secrets.swift               — Checked-in safe Gemini API key fallback; reads ignored GeminiAPIKey.local in debug builds
+    Secrets.swift               — Checked-in safe Gemini API key fallback; reads bundled ignored GeminiAPIKey.local at runtime
     GeminiAPIKey.local.example  — Template for ignored local Gemini API key text file
   ViewModels/
     RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
