@@ -62,10 +62,10 @@ sift/
     GeminiRecommendationRouter.swift — GoogleGenerativeAI request boundary + Flash/Pro routing + retry classification
     Secrets.swift.example       — Template for local Gemini API key; real Secrets.swift is gitignored
   ViewModels/
-    RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
+    RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
     HistoryViewModel.swift      — history deletion state owner, routes deletes through SessionStore and surfaces delete failures
   Views/
-    RecordingScreen.swift       — record button, audio level meter, delegates to flow views
+    RecordingScreen.swift       — record button, audio level meter, delegates to flow views, tears down in-flight check-in work on disappearance
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
     SuggestionView.swift        — transcript display + Gemini rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
     ReflectionView.swift        — "Did you try it?" → thumbs up/down → optional notes → save/skip
@@ -80,7 +80,7 @@ siftTests/
       SwiftDataTests.swift                 — cascade delete + store deletion + predicate filtering + Gemini persistence round-trip
     ViewModels/
       RecordingStateTests.swift            — enum equality for all cases
-      RecordingViewModelTests.swift        — fake-backed check-in flow, persistence, retry, and failure-path tests
+      RecordingViewModelTests.swift        — fake-backed check-in flow, persistence, retry, async cancellation, and failure-path tests
       HistoryViewModelTests.swift          — fake-backed history deletion success and failure-path tests
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality

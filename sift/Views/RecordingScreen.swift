@@ -70,6 +70,9 @@ struct RecordingScreen: View {
             )
             await viewModel.setup()
         }
+        .onDisappear {
+            viewModel.tearDown()
+        }
     }
 
     private func previouslyHelpfulIDs() -> Set<String> {

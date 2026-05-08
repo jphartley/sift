@@ -12,9 +12,9 @@ struct RecordingViewModelTests {
     private func makeViewModel(
         audioRecorder: FakeAudioRecorder = FakeAudioRecorder(),
         transcriptionClient: FakeTranscriptionClient = FakeTranscriptionClient(),
-        recommendationClient: FakeRecommendationClient = FakeRecommendationClient(),
+        recommendationClient: RecommendationClient = FakeRecommendationClient(),
         sessionStore: FakeSessionStore = FakeSessionStore()
-    ) -> (RecordingViewModel, FakeAudioRecorder, FakeTranscriptionClient, FakeRecommendationClient, FakeSessionStore) {
+    ) -> (RecordingViewModel, FakeAudioRecorder, FakeTranscriptionClient, RecommendationClient, FakeSessionStore) {
         let viewModel = RecordingViewModel(audioRecorder: audioRecorder)
         viewModel.configure(
             sessionStore: sessionStore,
@@ -127,6 +127,103 @@ struct RecordingViewModelTests {
         }
         #expect(practices.map(\.id) == ["stretch-break"])
         #expect(rationale == "Try moving gently.")
+    }
+
+    @Test func meterPollingStopsUpdatingAfterStopRecording() async {
+        let audioRecorder = FakeAudioRecorder(keepsRecordingAfterStop: true)
+        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        viewModel.state = .ready
+
+        viewModel.startRecording()
+        try? await Task.sleep(for: .milliseconds(70))
+        #expect(viewModel.recordingDuration == 4.2)
+
+        _ = viewModel.stopRecording()
+        audioRecorder.recordingDuration = 99
+        audioRecorder.audioLevel = -1
+        try? await Task.sleep(for: .milliseconds(120))
+
+        #expect(viewModel.recordingDuration == 4.2)
+        #expect(viewModel.audioLevel == -24)
+    }
+
+    @Test func retryAnalysisIgnoresEarlierInFlightResult() async {
+        let recommendationClient = ControlledRecommendationClient()
+        let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
+        viewModel.pendingSession = Session(transcript: "I feel tense")
+
+        let firstTask = viewModel.retryAnalysis()
+        await recommendationClient.waitForRequestCount(1)
+
+        let secondTask = viewModel.retryAnalysis()
+        await recommendationClient.waitForRequestCount(2)
+
+        recommendationClient.resumeRequest(at: 1, with: RecommendationResult(
+            rationale: "Second result",
+            practices: [(practiceID: "stretch-break", relevance: "Move gently.")],
+            confidence: 0.9,
+            modelUsed: "gemini-3-flash-preview",
+            wasEscalated: false
+        ))
+        await secondTask?.value
+
+        recommendationClient.resumeRequest(at: 0, with: RecommendationResult(
+            rationale: "First result",
+            practices: [(practiceID: "box-breathing", relevance: "Breathe slowly.")],
+            confidence: 0.9,
+            modelUsed: "gemini-3-flash-preview",
+            wasEscalated: false
+        ))
+        await firstTask?.value
+
+        guard case .suggesting(_, let practices, let rationale, _, _) = viewModel.state else {
+            #expect(Bool(false), "Expected .suggesting state")
+            return
+        }
+
+        #expect(rationale == "Second result")
+        #expect(practices.map { $0.id } == ["stretch-break"])
+    }
+
+    @Test func tearDownDuringAnalysisPreventsSuggestionsAndCancellationError() async {
+        let recommendationClient = ControlledRecommendationClient()
+        let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
+        viewModel.pendingSession = Session(transcript: "I feel tense")
+
+        let task = viewModel.retryAnalysis()
+        await recommendationClient.waitForRequestCount(1)
+
+        viewModel.tearDown()
+        recommendationClient.resumeRequest(at: 0, with: RecommendationResult(
+            rationale: "Late result",
+            practices: [(practiceID: "box-breathing", relevance: "Breathe slowly.")],
+            confidence: 0.9,
+            modelUsed: "gemini-3-flash-preview",
+            wasEscalated: false
+        ))
+        await task?.value
+
+        #expect(viewModel.state == RecordingState.analyzing)
+        #expect(viewModel.lastRecommendationResult == nil)
+    }
+
+    @Test func tearDownDuringRecordingStopsRecorderAndCancelsMeterPolling() async {
+        let audioRecorder = FakeAudioRecorder(keepsRecordingAfterStop: true)
+        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        viewModel.state = .ready
+
+        viewModel.startRecording()
+        try? await Task.sleep(for: .milliseconds(70))
+        #expect(viewModel.recordingDuration == 4.2)
+
+        viewModel.tearDown()
+        audioRecorder.recordingDuration = 99
+        audioRecorder.audioLevel = -1
+        try? await Task.sleep(for: .milliseconds(120))
+
+        #expect(audioRecorder.didStopRecording)
+        #expect(viewModel.recordingDuration == 4.2)
+        #expect(viewModel.audioLevel == -24)
     }
 
     @Test func logPracticeSetsReflectingWithDescriptionAndRelevance() {
@@ -325,19 +422,22 @@ private final class FakeAudioRecorder: AudioRecording {
     private let permissionGranted: Bool
     private let recordingURL: URL
     private let startError: Error?
+    private let keepsRecordingAfterStop: Bool
 
     init(
         permissionGranted: Bool = true,
         recordingDuration: TimeInterval = 4.2,
         audioLevel: Float = -24,
         recordingURL: URL = URL(fileURLWithPath: "/tmp/fake-recording.wav"),
-        startError: Error? = nil
+        startError: Error? = nil,
+        keepsRecordingAfterStop: Bool = false
     ) {
         self.permissionGranted = permissionGranted
         self.recordingDuration = recordingDuration
         self.audioLevel = audioLevel
         self.recordingURL = recordingURL
         self.startError = startError
+        self.keepsRecordingAfterStop = keepsRecordingAfterStop
     }
 
     func requestPermission() async -> Bool {
@@ -354,7 +454,9 @@ private final class FakeAudioRecorder: AudioRecording {
 
     func stopRecording() {
         didStopRecording = true
-        isRecording = false
+        if !keepsRecordingAfterStop {
+            isRecording = false
+        }
     }
 }
 
@@ -405,6 +507,26 @@ private final class FakeRecommendationClient: RecommendationClient {
         receivedTranscript = transcript
         receivedHistory = history
         return result
+    }
+}
+
+private final class ControlledRecommendationClient: RecommendationClient {
+    private var requests: [CheckedContinuation<RecommendationResult, Error>] = []
+
+    func recommend(transcript: String, history: [SessionHistoryEntry]) async throws -> RecommendationResult {
+        try await withCheckedThrowingContinuation { continuation in
+            requests.append(continuation)
+        }
+    }
+
+    func waitForRequestCount(_ count: Int) async {
+        while requests.count < count {
+            await Task.yield()
+        }
+    }
+
+    func resumeRequest(at index: Int, with result: RecommendationResult) {
+        requests[index].resume(returning: result)
     }
 }
 

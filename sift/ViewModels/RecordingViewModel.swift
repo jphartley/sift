@@ -23,6 +23,9 @@ final class RecordingViewModel {
     private var transcriptionService: TranscriptionClient?
     private var recommendationClient: RecommendationClient?
     private var sessionStore: SessionStore?
+    private var meterPollingTask: Task<Void, Never>?
+    private var analysisTask: Task<Void, Never>?
+    private var analysisTaskID: UUID?
     private var currentRecordingURL: URL?
     var pendingSession: Session?
     var currentAttempt: PracticeAttempt?
@@ -56,19 +59,14 @@ final class RecordingViewModel {
 
     func startRecording() {
         guard case .ready = state else { return }
+        cancelMeterPolling()
 
         do {
             currentRecordingURL = try audioRecorder.startRecording()
             state = .recording
-
-            Task { @MainActor in
-                while audioRecorder.isRecording {
-                    recordingDuration = audioRecorder.recordingDuration
-                    audioLevel = audioRecorder.audioLevel
-                    try? await Task.sleep(for: .milliseconds(50))
-                }
-            }
+            startMeterPolling()
         } catch {
+            cancelMeterPolling()
             state = .error("Failed to start recording: \(error.localizedDescription)")
         }
     }
@@ -76,6 +74,7 @@ final class RecordingViewModel {
     @discardableResult
     func stopRecording() -> Task<Void, Never>? {
         audioRecorder.stopRecording()
+        cancelMeterPolling()
         let audioDuration = recordingDuration
         state = .transcribing
 
@@ -89,9 +88,11 @@ final class RecordingViewModel {
             return nil
         }
 
-        let task = Task {
+        let taskID = replaceAnalysisTaskID()
+        let task = Task { @MainActor in
             do {
                 let (text, transcriptionMs) = try await transcriptionService.transcribe(audioURL: recordingURL)
+                guard !Task.isCancelled, analysisTaskID == taskID else { return }
 
                 try? FileManager.default.removeItem(at: recordingURL)
                 currentRecordingURL = nil
@@ -108,11 +109,20 @@ final class RecordingViewModel {
                 state = .analyzing
 
                 let result = try await analyzeAndSuggest(transcript: text)
+                guard !Task.isCancelled, analysisTaskID == taskID else { return }
+
                 try applyRecommendationResult(result, transcript: text)
             } catch {
+                guard !Task.isCancelled, analysisTaskID == taskID else { return }
                 state = .error("Analyzing failed: \(error.localizedDescription)")
             }
+
+            if analysisTaskID == taskID {
+                analysisTask = nil
+                analysisTaskID = nil
+            }
         }
+        analysisTask = task
         return task
     }
 
@@ -176,15 +186,33 @@ final class RecordingViewModel {
         }
         let transcript = session.transcript
         state = .analyzing
-        let task = Task {
+        let taskID = replaceAnalysisTaskID()
+        let task = Task { @MainActor in
             do {
                 let result = try await analyzeAndSuggest(transcript: transcript)
+                guard !Task.isCancelled, analysisTaskID == taskID else { return }
+
                 try applyRecommendationResult(result, transcript: transcript)
             } catch {
+                guard !Task.isCancelled, analysisTaskID == taskID else { return }
                 state = .error("Analyzing failed: \(error.localizedDescription)")
             }
+
+            if analysisTaskID == taskID {
+                analysisTask = nil
+                analysisTaskID = nil
+            }
         }
+        analysisTask = task
         return task
+    }
+
+    func tearDown() {
+        if audioRecorder.isRecording {
+            audioRecorder.stopRecording()
+        }
+        cancelMeterPolling()
+        cancelAnalysisTask()
     }
 
     private func analyzeAndSuggest(transcript: String) async throws -> RecommendationResult {
@@ -249,5 +277,38 @@ final class RecordingViewModel {
         recordingDuration = 0
         audioLevel = -160
         state = .ready
+    }
+
+    private func startMeterPolling() {
+        cancelMeterPolling()
+        meterPollingTask = Task { @MainActor in
+            while !Task.isCancelled && audioRecorder.isRecording {
+                recordingDuration = audioRecorder.recordingDuration
+                audioLevel = audioRecorder.audioLevel
+                do {
+                    try await Task.sleep(for: .milliseconds(50))
+                } catch {
+                    break
+                }
+            }
+        }
+    }
+
+    private func cancelMeterPolling() {
+        meterPollingTask?.cancel()
+        meterPollingTask = nil
+    }
+
+    private func replaceAnalysisTaskID() -> UUID {
+        cancelAnalysisTask()
+        let taskID = UUID()
+        analysisTaskID = taskID
+        return taskID
+    }
+
+    private func cancelAnalysisTask() {
+        analysisTask?.cancel()
+        analysisTask = nil
+        analysisTaskID = nil
     }
 }
