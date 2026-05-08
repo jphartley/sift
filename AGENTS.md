@@ -8,7 +8,13 @@ iOS wellness companion app — SwiftUI + SwiftData + WhisperKit.
 - Focus on correctness and project alignment.
 - Every behavior change MUST update or add tests. Run `xcodebuild test` before committing.
 - Only after the task is complete, perform a cleanup pass: remove dead code, unused imports, stale comments; reduce unnecessary abstraction; align with project patterns and conventions. Do not expand scope during this pass.
-- Commit frequently in small, logical, verified units. Use descriptive messages (e.g., `feat: add user validation`, `fix: resolve import error`).
+- Remind the user to commit frequently in small, logical, verified units. The user decides when to commit. Use descriptive messages when asked to commit (e.g., `feat: add user validation`, `fix: resolve import error`).
+
+### Definition of Done
+- Relevant tests are added or updated for behavior changes.
+- `xcodebuild test` has passed, or any inability to run it is clearly explained.
+- `AGENTS.md` has been checked for needed updates when architecture, dependencies, build/test commands, project phase, or major workflows change.
+- The cleanup pass is complete and scoped to the finished task.
 
 ### Struggle Protocol
 If a task fails or you are stuck:
@@ -29,7 +35,7 @@ This is the **voice check-in MVP** — the first product-feature iteration after
 ## Build & run
 
 - Open `sift.xcodeproj` in Xcode (built with Xcode 26.4.1).
-- Single target `sift`. Two SPM dependencies: WhisperKit (from `https://github.com/argmaxinc/WhisperKit.git`) and GoogleGenerativeAI (from `https://github.com/google-gemini/generative-ai-swift.git`).
+- Single target `sift`. SPM dependencies: WhisperKit (from `https://github.com/argmaxinc/WhisperKit.git`), GoogleGenerativeAI (from `https://github.com/google-gemini/generative-ai-swift.git`), and Yams (from `https://github.com/jpsim/Yams.git`).
 - CLI build: `xcodebuild -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`
 - CLI test (all): `xcodebuild test -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 - CLI test (unit/integration only, skip slow UI): append ` -skip-testing:siftUITests`
@@ -45,12 +51,12 @@ sift/
   Models/
     Session.swift         — @Model: one voice check-in, transcript + audio/transcription durations + geminiRationale/geminiModelUsed/geminiConfidence + cascade-delete attempts relationship
     PracticeAttempt.swift — @Model: one practice trial, linked to session, with helpfulness rating
-    PracticeLibrary.swift — Practice struct + 10 curated practices + keyword matcher
+    PracticeLibrary.swift — Practice struct + YAML-backed 10-practice library loader
   Services/
     AudioRecorderService.swift  — AVAudioRecorder (PCM 16kHz mono WAV, temp file)
     TranscriptionService.swift  — WhisperKit wrapper, loads "openai_whisper-base.en" model
     GeminiService.swift         — GoogleGenerativeAI wrapper, two-tier Flash/Pro model routing, structured JSON response schema, builds prompts from transcript + library + user history
-    Secrets.swift               — Gemini API key (committed; listed in .gitignore)
+    Secrets.swift.example       — Template for local Gemini API key; real Secrets.swift is gitignored
   ViewModels/
     RecordingViewModel.swift    — orchestrator: owns AudioRecorderService, uses TranscriptionService + GeminiService, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
   Views/
@@ -79,7 +85,7 @@ siftUITests/
 
 ## Conventions
 
-  - **Testing**:
+- **Testing**:
   - Every change that modifies behavior MUST update or add corresponding tests.
   - OpenSpec change proposals MUST include test-related tasks (new tests, updated tests).
   - Tests use Swift Testing (`import Testing`) — not XCTest — except UI tests which use XCTest (`import XCTest`) for `XCUIApplication`.
@@ -93,5 +99,3 @@ siftUITests/
 - **SwiftData**: `@Model` for persistence, `@Query` for reads. Container configured in `siftApp.swift`.
 - **No comments**: The codebase intentionally omits comments. Do not add them.
 - Deployment target: iOS 26.4 (bleeding-edge — assumes Swift 6, full structured concurrency).
-
-
