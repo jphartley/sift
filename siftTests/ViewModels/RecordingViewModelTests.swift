@@ -242,7 +242,7 @@ struct RecordingViewModelTests {
             return
         }
         #expect(name == "Box Breathing")
-        #expect(desc == practice.description)
+        #expect(desc == practice.summary)
         #expect(rel == "Breathing helps regulate your nervous system")
         #expect(viewModel.pendingSession?.attempts.count == 1)
         #expect(viewModel.currentAttempt?.practiceID == "box-breathing")

@@ -51,7 +51,7 @@ sift/
   Models/
     Session.swift         — @Model: one voice check-in, transcript + audio/transcription durations + geminiRationale/geminiModelUsed/geminiConfidence + cascade-delete attempts relationship
     PracticeAttempt.swift — @Model: one practice trial, linked to session, with helpfulness rating
-    PracticeLibrary.swift — Practice struct + YAML-backed 10-practice library loader
+    PracticeLibrary.swift — Practice struct + YAML-backed richer practice library loader
   Services/
     CheckInServices.swift      — Protocol boundaries for audio recording, transcription, recommendations, and session persistence/history/delete; includes SwiftDataSessionStore
     AudioRecorderService.swift  — AVAudioRecorder (PCM 16kHz mono WAV, temp file)

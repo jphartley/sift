@@ -133,7 +133,7 @@ final class RecordingViewModel {
         currentAttempt = attempt
         state = .reflecting(
             practiceName: practice.name,
-            practiceDescription: practice.description,
+            practiceDescription: practice.summary,
             relevance: relevance ?? ""
         )
     }

@@ -9,13 +9,22 @@ struct Practice: Identifiable, Equatable, Hashable, Decodable {
     let id: String
     let name: String
     let category: String
+    let labels: [String]
+    let bestFor: [String]
     let keywords: [String]
-    let description: String
+    let summary: String
+    let steps: [String]
+    let whyItHelps: String
     let durationMinutes: Int
+    let intensity: String
+    let avoidWhen: [String]
 
     enum CodingKeys: String, CodingKey {
-        case id, name, category, keywords, description
+        case id, name, category, labels, keywords, summary, steps, intensity
+        case bestFor = "best_for"
+        case whyItHelps = "why_it_helps"
         case durationMinutes = "duration_minutes"
+        case avoidWhen = "avoid_when"
     }
 
     static let yamlFileName = "practices"

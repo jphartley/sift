@@ -116,7 +116,7 @@ struct SuggestionView: View {
                     }
                 }
 
-                Text(practice.description)
+                Text(practice.summary)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(isExpanded ? nil : 2)

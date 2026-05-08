@@ -2,153 +2,1450 @@ practices:
   - id: box-breathing
     name: Box Breathing
     category: Breathwork
+    labels:
+      - calm
+      - anxiety
+      - quick-reset
+      - structured
+      - low-effort
+    best_for:
+      - racing thoughts
+      - feeling physically keyed up
+      - needing composure before a hard moment
     keywords:
       - breath
       - breathing
       - anxious
-      - calm
       - stress
-      - anxiety
+      - calm
       - nervous
-    description: |
-      Inhale for 4 seconds, hold for 4, exhale for 4, hold for 4.
-      Repeat 4 times.
+      - panic
+    summary: A steady four-part breathing pattern for settling yourself when things feel fast or loud.
+    steps:
+      - Sit upright or stand with your feet grounded.
+      - Inhale through your nose for 4 seconds.
+      - Hold gently for 4 seconds.
+      - Exhale slowly for 4 seconds.
+      - Hold empty for 4 seconds.
+      - Repeat for 4-6 rounds, then breathe normally.
+    why_it_helps: The predictable rhythm gives your attention somewhere reliable to land, which can make the next few minutes feel more manageable.
     duration_minutes: 3
+    intensity: low
+    avoid_when:
+      - feeling dizzy
+      - driving
+
   - id: 478-breathing
     name: 4-7-8 Breathing
     category: Breathwork
-    keywords:
-      - breath
-      - breathing
+    labels:
       - sleep
+      - wind-down
       - calm
-      - restless
-      - wind down
-      - can't sleep
-    description: |
-      Inhale for 4 seconds, hold for 7, exhale for 8.
-      Repeat 3-5 times.
-    duration_minutes: 3
-  - id: body-scan
-    name: Body Scan
-    category: Sensory
+      - anxiety
+      - evening
+    best_for:
+      - winding down before sleep
+      - restless evenings
+      - feeling tense after a long day
     keywords:
-      - body
-      - scan
-      - tension
-      - physical
-      - tight
-      - ache
-      - pain
-      - sore
-      - stiff
-    description: |
-      Slowly move attention from head to toes, noticing sensations without judgment.
+      - sleep
+      - tired
+      - restless
+      - wired
+      - can't sleep
+      - wind down
+      - breathing
+    summary: A slow breath pattern with a long exhale for easing into rest.
+    steps:
+      - Sit or lie down somewhere comfortable.
+      - Inhale quietly through your nose for 4 seconds.
+      - Hold the breath gently for 7 seconds.
+      - Exhale slowly through your mouth for 8 seconds.
+      - Repeat for 3-5 rounds.
+      - Let your breathing return to normal before standing up.
+    why_it_helps: The long exhale and repeated count can help your body shift toward a quieter pace.
+    duration_minutes: 3
+    intensity: low
+    avoid_when:
+      - feeling dizzy
+      - short of breath
+      - driving
+
+  - id: physiological-sigh
+    name: Physiological Sigh
+    category: Breathwork
+    labels:
+      - quick-reset
+      - tension-release
+      - anxiety
+      - nervous-system
+      - low-effort
+    best_for:
+      - sudden stress
+      - a tight chest
+      - needing a reset in under a minute
+    keywords:
+      - stress
+      - sigh
+      - anxious
+      - tight chest
+      - overwhelmed
+      - reset
+    summary: A quick two-inhale breath followed by a long exhale.
+    steps:
+      - Take a comfortable inhale through your nose.
+      - Before exhaling, sip in a little more air.
+      - Let the breath out slowly through your mouth.
+      - Pause for a moment and notice what changed.
+      - Repeat 2-5 times.
+    why_it_helps: A fuller inhale followed by a long exhale can release held tension and interrupt a stress spiral quickly.
+    duration_minutes: 1
+    intensity: low
+    avoid_when:
+      - feeling dizzy
+      - driving
+
+  - id: alternate-nostril-breathing
+    name: Alternate Nostril Breathing
+    category: Breathwork
+    labels:
+      - balance
+      - focus
+      - calm
+      - yoga
+      - contemplative
+    best_for:
+      - feeling scattered
+      - preparing to meditate
+      - wanting a slow ritualized breath practice
+    keywords:
+      - nostril
+      - breathing
+      - scattered
+      - balance
+      - focus
+      - yoga
+    summary: A gentle yogic breathing practice that alternates the breath between nostrils.
+    steps:
+      - Sit comfortably and soften your shoulders.
+      - Close your right nostril and inhale through your left.
+      - Close your left nostril and exhale through your right.
+      - Inhale through your right nostril.
+      - Close your right nostril and exhale through your left.
+      - Continue slowly for 3-5 minutes.
+    why_it_helps: The pattern asks for just enough attention to gather the mind while the slow breath supports steadiness.
     duration_minutes: 5
-  - id: short-walk
-    name: 5-Minute Walk
-    category: Movement
+    intensity: low
+    avoid_when:
+      - congested
+      - feeling dizzy
+      - driving
+
+  - id: extended-exhale-breathing
+    name: Extended Exhale Breathing
+    category: Breathwork
+    labels:
+      - calm
+      - anxiety
+      - simple
+      - low-effort
+      - nervous-system
+    best_for:
+      - feeling keyed up
+      - wanting something simple
+      - needing to soften without counting too much
+    keywords:
+      - exhale
+      - anxious
+      - calm
+      - stress
+      - soften
+      - breathing
+    summary: A simple practice of making each exhale a little longer than each inhale.
+    steps:
+      - Breathe normally for a few breaths.
+      - Inhale gently for a comfortable count.
+      - Exhale for one or two counts longer than the inhale.
+      - Keep the breath easy rather than forced.
+      - Continue for 3-5 minutes.
+    why_it_helps: Lengthening the exhale can cue a slower rhythm without needing a complicated technique.
+    duration_minutes: 4
+    intensity: low
+    avoid_when:
+      - feeling dizzy
+      - short of breath
+      - driving
+
+  - id: three-part-yogic-breath
+    name: Three-Part Yogic Breath
+    category: Breathwork
+    labels:
+      - body-awareness
+      - yoga
+      - grounding
+      - calm
+      - spaciousness
+    best_for:
+      - shallow breathing
+      - feeling disconnected from your body
+      - easing into a slower state
+    keywords:
+      - belly
+      - ribs
+      - chest
+      - yoga
+      - breath
+      - shallow
+    summary: A spacious breath that moves attention through the belly, ribs, and chest.
+    steps:
+      - Sit or lie down with one hand on your belly and one on your chest.
+      - Inhale first into the belly.
+      - Let the inhale expand into the ribs.
+      - Let the top of the inhale gently lift the chest.
+      - Exhale slowly from chest, ribs, then belly.
+      - Repeat for several easy rounds.
+    why_it_helps: Moving attention through the body can make the breath feel less cramped and bring you back into physical presence.
+    duration_minutes: 5
+    intensity: low
+    avoid_when:
+      - feeling dizzy
+      - short of breath
+
+  - id: equal-breathing
+    name: Equal Breathing
+    category: Breathwork
+    labels:
+      - focus
+      - balance
+      - calm
+      - simple
+      - steady
+    best_for:
+      - scattered attention
+      - mild anxiety
+      - wanting a clean and simple rhythm
+    keywords:
+      - equal
+      - breathing
+      - steady
+      - focus
+      - calm
+      - balance
+    summary: A balanced breath practice where the inhale and exhale are the same length.
+    steps:
+      - Choose a comfortable count, such as 4.
+      - Inhale through your nose for that count.
+      - Exhale through your nose or mouth for the same count.
+      - Keep the rhythm smooth and unforced.
+      - Continue for 3-5 minutes.
+    why_it_helps: Matching the inhale and exhale gives the mind a clean rhythm to follow without adding strain.
+    duration_minutes: 4
+    intensity: low
+    avoid_when:
+      - feeling dizzy
+      - driving
+
+  - id: counting-the-breath
+    name: Counting the Breath
+    category: Breathwork
+    labels:
+      - focus
+      - meditation
+      - rumination
+      - calm
+      - low-effort
+    best_for:
+      - repetitive thoughts
+      - settling before meditation
+      - needing a gentle attention anchor
+    keywords:
+      - count
+      - breath
+      - thinking
+      - racing
+      - focus
+      - meditation
+    summary: A quiet breath practice that uses counting to gather wandering attention.
+    steps:
+      - Sit comfortably and let your breath be natural.
+      - Count one on the first exhale.
+      - Count up to ten, one exhale at a time.
+      - When you lose count, gently begin again at one.
+      - Continue without trying to make the breath perfect.
+    why_it_helps: Counting gives busy thoughts a simple job, making it easier to return without fighting the mind.
+    duration_minutes: 5
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: one-minute-breath-reset
+    name: One-Minute Breath Reset
+    category: Breathwork
+    labels:
+      - quick-reset
+      - transition
+      - low-effort
+      - calm
+      - practical
+    best_for:
+      - between meetings
+      - before answering a message
+      - when you only have a minute
+    keywords:
+      - reset
+      - quick
+      - minute
+      - meeting
+      - message
+      - pause
+    summary: A tiny breath pause for changing gears without making a ceremony of it.
+    steps:
+      - Pause what you are doing.
+      - Let your jaw and shoulders soften slightly.
+      - Take five slow, comfortable breaths.
+      - Make each exhale a little easier than the last.
+      - Name the next thing you are going to do.
+    why_it_helps: A short pause can create just enough space between stimulus and response to choose your next move.
+    duration_minutes: 1
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: sighing-practice
+    name: Sighing Practice
+    category: Breathwork
+    labels:
+      - tension-release
+      - emotional-release
+      - simple
+      - body-awareness
+      - low-effort
+    best_for:
+      - held tension
+      - frustration
+      - feeling like you need to let something out
+    keywords:
+      - sigh
+      - release
+      - tension
+      - frustrated
+      - heavy
+      - exhale
+    summary: A simple practice of letting out several honest, audible sighs.
+    steps:
+      - Find a place where making a little sound feels okay.
+      - Take a natural inhale.
+      - Let the exhale come out as a sigh.
+      - Repeat several times without performing it.
+      - After the last sigh, sit quietly for a few normal breaths.
+    why_it_helps: Sighing gives the body permission to release effort that may have been held unconsciously.
+    duration_minutes: 2
+    intensity: low
+    avoid_when:
+      - unsafe to make sound
+      - feeling dizzy
+
+  - id: humming-exhale
+    name: Humming Exhale
+    category: Breathwork
+    labels:
+      - grounding
+      - sensory
+      - calm
+      - nervous-system
+      - sound
+    best_for:
+      - feeling scattered
+      - wanting a soothing sensory anchor
+      - tension in the throat or chest
+    keywords:
+      - hum
+      - humming
+      - exhale
+      - sound
+      - calm
+      - throat
+    summary: A soft humming breath that uses vibration as a calming anchor.
+    steps:
+      - Sit comfortably and breathe in through your nose.
+      - Exhale with a gentle hum.
+      - Notice the vibration in your lips, face, throat, or chest.
+      - Let the next inhale arrive naturally.
+      - Repeat for 2-4 minutes.
+    why_it_helps: The vibration and sound give your attention a felt anchor, which can make the breath feel warmer and more embodied.
+    duration_minutes: 3
+    intensity: low
+    avoid_when:
+      - unsafe to make sound
+      - throat pain
+
+  - id: breath-of-fire
+    name: Breath of Fire
+    category: Breathwork
+    labels:
+      - energizing
+      - yoga
+      - high-intensity
+      - heat
+      - activation
+    best_for:
+      - low energy
+      - sluggishness
+      - wanting a brief energizing practice
+    keywords:
+      - energy
+      - tired
+      - sluggish
+      - breath of fire
+      - activate
+      - wake up
+    summary: A brief, rhythmic yogic breathing practice for building heat and energy.
+    steps:
+      - Sit upright with a long spine.
+      - Take a few normal breaths first.
+      - Begin short, rhythmic exhales through the nose, letting inhales happen naturally.
+      - Continue for 15-30 seconds only.
+      - Stop and breathe normally, noticing the after-effect.
+    why_it_helps: The active rhythm can wake up attention and energy quickly, especially when you feel dull or stuck.
+    duration_minutes: 2
+    intensity: high
+    avoid_when:
+      - pregnancy
+      - feeling dizzy
+      - acute panic
+      - cardiovascular concerns
+      - seizure history
+      - driving
+
+  - id: wim-hof-style-breathing
+    name: Wim Hof-Style Breathing
+    category: Breathwork
+    labels:
+      - energizing
+      - high-intensity
+      - resilience
+      - body-awareness
+      - activation
+    best_for:
+      - experienced breathwork sessions
+      - wanting a strong state shift
+      - feeling ready for an intense practice
+    keywords:
+      - wim hof
+      - intense breath
+      - energizing
+      - breath hold
+      - cold
+      - activation
+    summary: A strong cyclic breathing practice with a brief breath hold, for experienced users only.
+    steps:
+      - Sit or lie down in a safe place, never in water or while driving.
+      - Take 20-30 fuller breaths at a steady pace.
+      - After the last exhale, pause and hold the breath out only as long as comfortable.
+      - Inhale, hold gently for a few seconds, then release.
+      - Rest with normal breathing and stop after one round if it feels like enough.
+    why_it_helps: Strong cyclic breathing can create a clear state shift, but it asks for respect and should be approached carefully.
+    duration_minutes: 10
+    intensity: high
+    avoid_when:
+      - in water
+      - driving
+      - standing
+      - pregnancy
+      - feeling dizzy
+      - acute panic
+      - cardiovascular concerns
+      - seizure history
+
+  - id: shoulder-drop-breathing
+    name: Shoulder-Drop Breathing
+    category: Breathwork
+    labels:
+      - tension-release
+      - body-awareness
+      - low-effort
+      - workday
+      - calm
+    best_for:
+      - neck and shoulder tension
+      - desk stress
+      - noticing you are bracing
+    keywords:
+      - shoulders
+      - neck
+      - tension
+      - desk
+      - bracing
+      - tight
+    summary: A breath practice that pairs each exhale with releasing the shoulders, jaw, and hands.
+    steps:
+      - Sit or stand where you are.
+      - Inhale and notice your shoulders.
+      - Exhale and let them drop a little.
+      - On the next exhale, soften your jaw.
+      - On the next exhale, loosen your hands.
+      - Continue for 1-3 minutes.
+    why_it_helps: Pairing breath with small physical releases can reveal where you are bracing and invite the body to spend less effort.
+    duration_minutes: 3
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: mindfulness-of-breath
+    name: Mindfulness of Breath
+    category: Meditation
+    labels:
+      - mindfulness
+      - focus
+      - calm
+      - meditation
+      - awareness
+    best_for:
+      - scattered attention
+      - wanting a classic meditation anchor
+      - returning to the present
+    keywords:
+      - meditate
+      - meditation
+      - breath
+      - focus
+      - present
+      - distracted
+    summary: A classic meditation practice of resting attention on the natural breath.
+    steps:
+      - Sit in a comfortable, alert posture.
+      - Let your breath move naturally.
+      - Rest attention on one place you feel the breath.
+      - When attention wanders, notice that gently.
+      - Return to the breath without making it a problem.
+    why_it_helps: Returning to one simple anchor can strengthen steadiness without needing your mind to be quiet.
+    duration_minutes: 10
+    intensity: low
+    avoid_when:
+      - unsafe to close eyes
+      - driving
+
+  - id: open-awareness-meditation
+    name: Open Awareness Meditation
+    category: Meditation
+    labels:
+      - awareness
+      - spaciousness
+      - meditation
+      - acceptance
+      - intermediate
+    best_for:
+      - feeling crowded by thoughts
+      - wanting less control
+      - practicing spacious attention
+    keywords:
+      - awareness
+      - open
+      - meditate
+      - thoughts
+      - spacious
+      - allow
+    summary: A spacious meditation where sounds, sensations, thoughts, and feelings can come and go.
+    steps:
+      - Sit comfortably with eyes open or closed.
+      - Notice the whole field of experience.
+      - Let sounds, sensations, and thoughts appear without choosing one.
+      - When you grip something, soften and open again.
+      - Rest as the space everything is moving through.
+    why_it_helps: Opening the field can make thoughts and feelings feel less like the whole world.
+    duration_minutes: 15
+    intensity: medium
+    avoid_when:
+      - acute panic
+      - unsafe to close eyes
+      - driving
+
+  - id: loving-kindness-metta
+    name: Loving-Kindness / Metta Meditation
+    category: Meditation
+    labels:
+      - compassion
+      - warmth
+      - connection
+      - self-compassion
+      - meditation
+    best_for:
+      - loneliness
+      - self-criticism
+      - wanting to soften toward yourself or others
+    keywords:
+      - metta
+      - loving kindness
+      - compassion
+      - lonely
+      - self criticism
+      - kindness
+    summary: A compassion meditation using simple phrases of goodwill.
+    steps:
+      - Sit quietly and bring yourself to mind.
+      - Offer a phrase such as "May I be safe" or "May I be at ease."
+      - Repeat the phrase slowly, letting it be sincere enough.
+      - Bring to mind someone you care about and offer the same wish.
+      - If it feels right, include someone neutral or difficult.
+    why_it_helps: Repeating goodwill phrases can make warmth more available when the mind has narrowed around threat or criticism.
+    duration_minutes: 12
+    intensity: medium
+    avoid_when:
+      - forcing forgiveness
+      - feeling emotionally flooded
+
+  - id: noting-practice
+    name: Noting Practice
+    category: Meditation
+    labels:
+      - mindfulness
+      - clarity
+      - rumination
+      - focus
+      - awareness
+    best_for:
+      - repetitive thoughts
+      - emotional swirl
+      - seeing patterns without getting lost in them
+    keywords:
+      - noting
+      - thinking
+      - feeling
+      - rumination
+      - label
+      - mindfulness
+    summary: A meditation that gently labels what is happening as it happens.
+    steps:
+      - Sit comfortably and notice what is most obvious.
+      - Silently label it with one word, such as "thinking," "hearing," or "tightness."
+      - Let the experience continue or pass.
+      - Label the next thing that becomes obvious.
+      - Keep the labels light, like touching a bell.
+    why_it_helps: Naming experience can create a little space between awareness and the thing you are noticing.
+    duration_minutes: 10
+    intensity: medium
+    avoid_when:
+      - acute panic
+      - driving
+
+  - id: walking-meditation
+    name: Walking Meditation
+    category: Meditation
+    labels:
+      - movement
+      - mindfulness
+      - grounding
+      - outdoors
+      - focus
+    best_for:
+      - restlessness
+      - meditation that feels too still
+      - reconnecting with your body
     keywords:
       - walk
-      - move
-      - outside
-      - fresh air
-      - stuck
+      - walking
       - restless
-      - sit
-      - sitting
-      - desk
-    description: |
-      Step outside for a short walk with no destination. Notice the air and light.
-    duration_minutes: 5
-  - id: morning-pages
-    name: Morning Pages
-    category: Journaling
-    keywords:
-      - write
-      - journal
-      - thoughts
-      - clear
-      - overwhelm
-      - brain dump
-      - racing
-      - mind
-    description: |
-      Write 3 pages of stream-of-consciousness. Don't edit - just move the pen.
+      - meditation
+      - steps
+      - outside
+    summary: A slow walking practice that uses each step as a meditation object.
+    steps:
+      - Choose a short path where you can walk safely.
+      - Walk more slowly than usual.
+      - Feel one foot lift, move, and land.
+      - Turn around when you reach the end of the path.
+      - Let each step bring you back.
+    why_it_helps: Walking gives restless energy somewhere to go while keeping attention close to direct sensation.
     duration_minutes: 10
-  - id: gratitude-list
-    name: Gratitude List
-    category: Journaling
+    intensity: low
+    avoid_when:
+      - unsafe walking conditions
+      - needing to hurry
+
+  - id: aham-mantra-meditation
+    name: AHAM Mantra Meditation
+    category: Meditation
+    labels:
+      - mantra
+      - contemplative
+      - focus
+      - stillness
+      - tradition-specific
+    best_for:
+      - wanting a simple sacred sound
+      - settling into stillness
+      - a focused meditation session
     keywords:
-      - grateful
+      - aham
+      - mantra
+      - meditation
+      - sacred sound
+      - focus
+      - stillness
+    summary: A mantra meditation using AHAM as a quiet inner repetition.
+    steps:
+      - Sit in a steady, comfortable posture.
+      - Let the breath settle naturally.
+      - Silently repeat AHAM with a gentle rhythm.
+      - When thoughts pull you away, return to the mantra.
+      - End by sitting quietly without repeating anything for a few breaths.
+    why_it_helps: A repeated mantra gives the mind a simple thread to follow, which can support focus and inward quiet.
+    duration_minutes: 15
+    intensity: medium
+    avoid_when:
+      - driving
+      - unsafe to close eyes
+
+  - id: rain-meditation
+    name: RAIN Meditation
+    category: Meditation
+    labels:
+      - emotional-processing
+      - self-compassion
+      - mindfulness
+      - acceptance
+      - inquiry
+    best_for:
+      - difficult emotions
+      - shame or self-judgment
+      - wanting to meet what is here kindly
+    keywords:
+      - rain
+      - emotion
+      - difficult
+      - shame
+      - self compassion
+      - overwhelmed
+    summary: A mindful emotional practice using Recognize, Allow, Investigate, and Nurture.
+    steps:
+      - Recognize what emotion or pattern is present.
+      - Allow it to be here for now, without approving or fixing it.
+      - Investigate gently where it lives in the body and what it needs.
+      - Nurture yourself with one kind phrase or gesture.
+      - Rest for a few breaths before moving on.
+    why_it_helps: RAIN offers a clear path for staying with emotion without collapsing into it or pushing it away.
+    duration_minutes: 15
+    intensity: medium
+    avoid_when:
+      - feeling emotionally flooded
+      - needing immediate external support
+
+  - id: breath-counting-meditation
+    name: Breath Counting Meditation
+    category: Meditation
+    labels:
+      - focus
+      - mindfulness
+      - meditation
+      - rumination
+      - calm
+    best_for:
+      - busy thoughts
+      - rebuilding concentration
+      - a simple seated practice
+    keywords:
+      - breath count
+      - count
+      - focus
+      - meditate
+      - concentration
+      - distracted
+    summary: A seated meditation that counts breaths to steady attention.
+    steps:
+      - Sit comfortably and feel the breath.
+      - Count one on the first full breath cycle.
+      - Continue up to ten.
+      - If you lose track, begin again at one.
+      - Keep returning with patience.
+    why_it_helps: Counting makes wandering easier to notice and returning easier to do.
+    duration_minutes: 10
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: do-nothing-meditation
+    name: Do-Nothing Meditation
+    category: Meditation
+    labels:
+      - acceptance
+      - rest
+      - awareness
+      - non-striving
+      - stillness
+    best_for:
+      - over-efforting
+      - trying to optimize everything
+      - practicing non-interference
+    keywords:
+      - do nothing
+      - rest
+      - effort
+      - meditate
+      - control
+      - allow
+    summary: A meditation where you stop trying to manage the moment.
+    steps:
+      - Sit comfortably and set a timer.
+      - Let go of trying to meditate well.
+      - If an intention to control appears, notice it.
+      - Do not push anything away or pull anything closer.
+      - Let the timer end the practice for you.
+    why_it_helps: For a mind that is always improving and managing, doing nothing can be a direct way to practice trust.
+    duration_minutes: 15
+    intensity: medium
+    avoid_when:
+      - acute panic
+      - unsafe to close eyes
+
+  - id: gratitude-meditation
+    name: Gratitude Meditation
+    category: Meditation
+    labels:
       - gratitude
-      - appreciate
-      - positive
-      - thankful
-      - good things
-      - blessing
-    description: |
-      Write down 3 things you're grateful for right now. Be specific.
-    duration_minutes: 3
-  - id: call-friend
-    name: Call a Friend
-    category: Social
+      - warmth
+      - perspective
+      - calm
+      - appreciation
+    best_for:
+      - feeling bleak
+      - reconnecting with what still supports you
+      - ending the day gently
     keywords:
-      - call
-      - friend
-      - talk
-      - lonely
-      - connect
-      - alone
-      - someone
-      - isolated
-      - miss
-    description: |
-      Call or text someone you trust. You don't need a reason.
+      - gratitude
+      - grateful
+      - thankful
+      - appreciate
+      - good things
+      - bleak
+    summary: A quiet practice of resting attention on what you genuinely appreciate.
+    steps:
+      - Sit comfortably and let your breath settle.
+      - Bring to mind one specific thing you appreciate.
+      - Notice how it feels in the body to remember it.
+      - Let another specific thing come to mind.
+      - End by naming one thing you want to carry forward.
+    why_it_helps: Specific gratitude can widen attention beyond what is wrong without denying what is hard.
+    duration_minutes: 8
+    intensity: low
+    avoid_when:
+      - forcing positivity
+
+  - id: micro-meditation-between-tasks
+    name: Micro-Meditation Between Tasks
+    category: Meditation
+    labels:
+      - transition
+      - quick-reset
+      - focus
+      - workday
+      - low-effort
+    best_for:
+      - task switching
+      - before opening the next app
+      - feeling pulled in too many directions
+    keywords:
+      - task
+      - switch
+      - meeting
+      - work
+      - pause
+      - focus
+    summary: A three-breath pause that marks the end of one thing and the start of another.
+    steps:
+      - Stop before beginning the next task.
+      - Take one breath to feel what just happened.
+      - Take one breath to feel your body now.
+      - Take one breath to name the next task.
+      - Begin with slightly more intention.
+    why_it_helps: A tiny pause can reduce the residue that follows you from one task into the next.
+    duration_minutes: 1
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: tea-meditation
+    name: Tea Meditation
+    category: Meditation
+    labels:
+      - ritual
+      - sensory
+      - warmth
+      - mindfulness
+      - practical
+    best_for:
+      - slowing down
+      - needing a gentle ritual
+      - reconnecting through the senses
+    keywords:
+      - tea
+      - warm drink
+      - ritual
+      - slow
+      - sensory
+      - mindful
+    summary: A simple drinking ritual that uses warmth, taste, and movement as anchors.
+    steps:
+      - Make tea or another warm drink.
+      - Hold the cup and feel its warmth.
+      - Notice the smell before drinking.
+      - Take slow sips without multitasking.
+      - Let the last sip mark the end of the practice.
+    why_it_helps: A familiar ritual can make mindfulness feel ordinary, warm, and easier to enter.
     duration_minutes: 10
+    intensity: low
+    avoid_when:
+      - no safe warm drink available
+
   - id: grounding-54321
     name: 5-4-3-2-1 Grounding
-    category: Sensory
+    category: Grounding
+    labels:
+      - anxiety
+      - sensory
+      - quick-reset
+      - panic
+      - present-moment
+    best_for:
+      - feeling scattered
+      - panic or spiraling
+      - needing to return to the room
     keywords:
       - ground
+      - grounding
       - senses
-      - present
       - anxious
-      - spinning
       - panic
-      - scattered
       - unreal
-    description: |
-      Name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste.
+      - spinning
+    summary: A sensory inventory that brings attention back to what is here right now.
+    steps:
+      - Name 5 things you can see.
+      - Name 4 things you can feel.
+      - Name 3 things you can hear.
+      - Name 2 things you can smell.
+      - Name 1 thing you can taste.
+      - Take one normal breath and look around again.
+    why_it_helps: Moving through the senses gives the mind concrete evidence of the present moment.
     duration_minutes: 3
-  - id: progressive-relaxation
-    name: Progressive Muscle Relaxation
-    category: Sensory
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: orienting-to-the-room
+    name: Orienting to the Room
+    category: Grounding
+    labels:
+      - safety
+      - sensory
+      - anxiety
+      - present-moment
+      - trauma-informed
+    best_for:
+      - feeling unreal or far away
+      - needing to locate yourself
+      - coming down from activation
     keywords:
-      - relax
-      - muscle
+      - room
+      - orient
+      - unsafe
+      - unreal
+      - present
+      - dissociated
+      - scared
+    summary: A slow visual grounding practice for reminding your body where you are.
+    steps:
+      - Keep your eyes open.
+      - Slowly turn your head and look around the room.
+      - Name where you are.
+      - Name three ordinary objects you can see.
+      - Notice one cue that says this moment is manageable enough.
+    why_it_helps: Looking around slowly can help your body update from old alarm to current surroundings.
+    duration_minutes: 3
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: feet-on-the-floor
+    name: Feet on the Floor
+    category: Grounding
+    labels:
+      - body-awareness
+      - low-effort
+      - public-ok
+      - anxiety
+      - present-moment
+    best_for:
+      - needing a discreet reset
+      - before a conversation
+      - feeling unsteady
+    keywords:
+      - feet
+      - floor
+      - ground
+      - steady
+      - anxious
+      - body
+    summary: A discreet grounding practice using pressure and contact through the feet.
+    steps:
+      - Place both feet on the floor.
+      - Press gently through the soles of your feet.
+      - Notice the pressure under your heels and toes.
+      - Let the chair or floor support more of your weight.
+      - Take five easy breaths while feeling that contact.
+    why_it_helps: Feeling physical support can make steadiness more available when attention is floating or tense.
+    duration_minutes: 2
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: object-anchor
+    name: Object Anchor
+    category: Grounding
+    labels:
+      - tactile
+      - sensory
+      - anxiety
+      - portable
+      - focus
+    best_for:
+      - panic in public
+      - needing something to do with your hands
+      - interrupting rumination
+    keywords:
+      - object
+      - anchor
+      - hands
+      - texture
+      - panic
+      - tactile
+    summary: A tactile practice using one object as a steady point of attention.
+    steps:
+      - Pick up a small object near you.
+      - Notice its weight in your hand.
+      - Trace its edges and textures with your fingers.
+      - Name its temperature, shape, and color.
+      - Keep returning to the object when thoughts pull away.
+    why_it_helps: Touch gives attention a concrete target, which can be easier than trying to think your way into calm.
+    duration_minutes: 4
+    intensity: low
+    avoid_when:
+      - driving
+
+  - id: wall-push
+    name: Wall Push
+    category: Grounding
+    labels:
+      - active
+      - anger
+      - tension-release
+      - body-awareness
+      - grounding
+    best_for:
+      - restless energy
+      - frustration or anger
+      - needing effort rather than stillness
+    keywords:
+      - wall
+      - push
+      - anger
+      - restless
       - tension
-      - unwind
-      - tight
-      - clench
-      - stress
-      - body
-    description: |
-      Tense each muscle group for 5 seconds, then release. Work from feet to face.
-    duration_minutes: 7
-  - id: stretch-break
-    name: Stretch Break
-    category: Movement
+      - energy
+    summary: A simple pressure practice that uses effort to bring you back into your body.
+    steps:
+      - Stand facing a wall with both palms against it.
+      - Press into the wall firmly but safely.
+      - Feel your arms, shoulders, feet, and legs working.
+      - Hold for 20-30 seconds.
+      - Release and notice the after-effect.
+    why_it_helps: Safe physical effort can give activated energy somewhere clear to go.
+    duration_minutes: 2
+    intensity: medium
+    avoid_when:
+      - shoulder injury
+      - wrist pain
+      - unsafe standing
+
+  - id: cold-water-face-splash
+    name: Cold Water Face Splash
+    category: Grounding
+    labels:
+      - temperature
+      - quick-reset
+      - anxiety
+      - sensory
+      - high-signal
+    best_for:
+      - intense activation
+      - needing a stronger reset
+      - feeling stuck in your head
     keywords:
-      - stretch
-      - move
-      - stiff
-      - sitting
+      - cold water
+      - splash
+      - panic
+      - reset
+      - face
+      - intense
+    summary: A brief temperature reset using cool water on your face.
+    steps:
+      - Go to a sink if one is available.
+      - Splash cool water on your face or hold a cool cloth to your cheeks.
+      - Keep breathing normally.
+      - Notice the temperature and the water on your skin.
+      - Dry your face and look around the room.
+    why_it_helps: A clear sensory signal can interrupt spiraling and bring attention back to the body quickly.
+    duration_minutes: 2
+    intensity: medium
+    avoid_when:
+      - unsafe to access water
+      - skin sensitivity to cold
+      - feeling faint
+
+  - id: five-minute-walk
+    name: Five-Minute Walk
+    category: Movement
+    labels:
+      - outdoors
+      - low-intensity
+      - reset
+      - restlessness
+      - accessible
+    best_for:
+      - feeling stuck
+      - desk fatigue
+      - needing a simple state change
+    keywords:
+      - walk
+      - outside
+      - stuck
+      - restless
       - desk
+      - fresh air
+      - move
+    summary: A short, no-destination walk to let your body and mind change gears.
+    steps:
+      - Step outside or into a hallway if outside is not available.
+      - Walk without trying to get anywhere important.
+      - Notice the rhythm of your steps.
+      - Let your eyes take in light, shapes, and distance.
+      - Return when five minutes feels complete.
+    why_it_helps: Gentle movement and a change of scene can loosen stuck attention without demanding a big effort.
+    duration_minutes: 5
+    intensity: low
+    avoid_when:
+      - unsafe walking conditions
+
+  - id: shaking-practice
+    name: Shaking Practice
+    category: Movement
+    labels:
+      - tension-release
+      - somatic
+      - energizing
+      - stress
+      - private
+    best_for:
+      - pent-up stress
+      - feeling frozen or braced
+      - needing to discharge energy
+    keywords:
+      - shake
+      - shaking
+      - stress
+      - frozen
+      - tension
+      - energy
+      - braced
+    summary: A short somatic release practice using gentle shaking through the body.
+    steps:
+      - Stand with soft knees somewhere private enough.
+      - Start by shaking out your hands.
+      - Let the movement travel into arms, shoulders, legs, and torso.
+      - Keep your breath natural and your jaw loose.
+      - Slow down gradually and stand still for a few breaths.
+    why_it_helps: Shaking can help mobilized stress move through the body instead of staying locked as bracing.
+    duration_minutes: 5
+    intensity: medium
+    avoid_when:
+      - injury
+      - dizziness
+      - unsafe standing
+      - feeling emotionally flooded
+
+  - id: gentle-yoga-flow
+    name: Gentle Yoga Flow
+    category: Movement
+    labels:
+      - yoga
+      - flexibility
+      - body-awareness
+      - calm
+      - low-intensity
+    best_for:
+      - stiffness
+      - wanting a slow embodied reset
+      - reconnecting breath and movement
+    keywords:
+      - yoga
+      - stretch
+      - stiff
       - body
-      - back
-      - neck
-      - shoulder
-    description: |
-      Stand up and stretch - reach high, touch toes, roll shoulders and neck.
-    duration_minutes: 3
+      - flow
+      - gentle
+    summary: A simple yoga sequence for moving slowly and coming back into your body.
+    steps:
+      - Start on hands and knees for a few rounds of cat-cow.
+      - Step one foot forward into a low lunge and breathe.
+      - Switch sides.
+      - Fold forward with soft knees.
+      - Rest in child's pose or an easy seat.
+    why_it_helps: Slow movement can unwind stiffness while giving attention a physical rhythm to follow.
+    duration_minutes: 12
+    intensity: low
+    avoid_when:
+      - sharp pain
+      - injury
+      - unsafe floor space
+
+  - id: walking-meditation-movement
+    name: Walking Meditation
+    category: Movement
+    labels:
+      - mindful
+      - grounding
+      - low-intensity
+      - restlessness
+      - focus
+    best_for:
+      - restless meditation
+      - needing movement and stillness together
+      - returning to your feet
+    keywords:
+      - walking meditation
+      - walk
+      - steps
+      - restless
+      - mindful
+      - grounding
+    summary: A slow walking practice that turns each step into a place to return.
+    steps:
+      - Choose a short, safe path.
+      - Walk slowly enough to feel each step.
+      - Notice lifting, moving, and placing each foot.
+      - Turn around without rushing.
+      - Keep returning to the soles of your feet.
+    why_it_helps: Slow walking lets the body participate in meditation, which can help when stillness feels too tight.
+    duration_minutes: 10
+    intensity: low
+    avoid_when:
+      - unsafe walking conditions
+      - needing to hurry
+
+  - id: dance-one-song
+    name: Dance One Song
+    category: Movement
+    labels:
+      - expressive
+      - mood-shift
+      - energizing
+      - music
+      - private
+    best_for:
+      - emotional heaviness
+      - needing a playful state shift
+      - getting out of your head
+    keywords:
+      - dance
+      - music
+      - song
+      - heavy
+      - mood
+      - move
+    summary: A one-song movement practice with no choreography and no need to look good.
+    steps:
+      - Choose one song that fits or gently shifts your mood.
+      - Make enough space to move safely.
+      - Let your body move before you decide what the movement means.
+      - Keep going until the song ends.
+      - Stand still for one breath and notice what changed.
+    why_it_helps: Music and movement can change emotional texture quickly, especially when thinking has become too tight.
+    duration_minutes: 5
+    intensity: medium
+    avoid_when:
+      - injury
+      - unsafe space
+      - dizziness
+
+  - id: qi-gong-flow
+    name: Qi Gong Flow
+    category: Movement
+    labels:
+      - gentle
+      - breath
+      - energy
+      - contemplative
+      - low-intensity
+    best_for:
+      - low energy
+      - wanting slow coordinated movement
+      - settling without sitting still
+    keywords:
+      - qi gong
+      - qigong
+      - slow movement
+      - energy
+      - gentle
+      - breath
+    summary: A gentle flow of slow movement and breath for settling and enlivening the body.
+    steps:
+      - Stand with soft knees and relaxed shoulders.
+      - Inhale as your arms float up in front of you.
+      - Exhale as your arms float down.
+      - Repeat slowly, as if moving through water.
+      - Let the movement become smaller before you stop.
+    why_it_helps: Slow coordinated movement can make energy feel smoother without pushing the body hard.
+    duration_minutes: 8
+    intensity: low
+    avoid_when:
+      - unsafe standing
+      - dizziness
+
+  - id: somatic-swaying
+    name: Somatic Swaying
+    category: Movement
+    labels:
+      - somatic
+      - soothing
+      - body-awareness
+      - private
+      - low-intensity
+    best_for:
+      - feeling rigid
+      - needing gentle motion
+      - settling without instructions
+    keywords:
+      - sway
+      - swaying
+      - somatic
+      - rigid
+      - body
+      - soothe
+    summary: A gentle swaying practice that lets the body find a small rhythm.
+    steps:
+      - Stand or sit with your feet supported.
+      - Let your body begin a small side-to-side sway.
+      - Do not force a rhythm; let it arrive.
+      - Notice what parts of you want to soften or move.
+      - Slow the sway until you become still.
+    why_it_helps: Repetitive gentle motion can feel regulating when stillness feels too rigid or effortful.
+    duration_minutes: 5
+    intensity: low
+    avoid_when:
+      - dizziness
+      - unsafe standing
+
+  - id: hip-and-jaw-release
+    name: Hip and Jaw Release
+    category: Movement
+    labels:
+      - tension-release
+      - body-awareness
+      - stress
+      - gentle
+      - somatic
+    best_for:
+      - jaw clenching
+      - hip tension
+      - noticing you are holding stress
+    keywords:
+      - jaw
+      - hips
+      - clench
+      - tension
+      - tight
+      - stress
+    summary: A gentle release for two places where stress often hides.
+    steps:
+      - Sit or stand comfortably.
+      - Let your jaw loosen and move it slowly side to side.
+      - Make small circles with your hips or shift weight from side to side.
+      - Exhale as you soften both areas.
+      - Continue gently without forcing range.
+    why_it_helps: Bringing attention and small movement to held areas can help you notice and release unconscious clenching.
+    duration_minutes: 6
+    intensity: low
+    avoid_when:
+      - sharp pain
+      - jaw injury
+      - hip injury
+
+  - id: childs-pose-rest
+    name: Child's Pose Rest
+    category: Movement
+    labels:
+      - yoga
+      - rest
+      - grounding
+      - low-intensity
+      - soothing
+    best_for:
+      - needing to fold inward
+      - back-body tension
+      - quiet rest without going to bed
+    keywords:
+      - child's pose
+      - child pose
+      - rest
+      - yoga
+      - fold
+      - tired
+    summary: A restful yoga shape for breathing into the back body.
+    steps:
+      - Come to hands and knees on a comfortable surface.
+      - Bring hips back toward heels.
+      - Let your forehead rest on the floor, a pillow, or stacked hands.
+      - Breathe into your back and ribs.
+      - Come out slowly when you feel ready.
+    why_it_helps: Folding forward with support can create a protected shape for rest and slower breathing.
+    duration_minutes: 5
+    intensity: low
+    avoid_when:
+      - knee pain
+      - unsafe floor space
+      - difficulty breathing in the position
+
+  - id: body-percussion-tap-out
+    name: Body Percussion Tap-Out
+    category: Movement
+    labels:
+      - sensory
+      - energizing
+      - body-awareness
+      - grounding
+      - rhythm
+    best_for:
+      - feeling numb or checked out
+      - needing body sensation
+      - waking up attention
+    keywords:
+      - tap
+      - tapping
+      - body
+      - numb
+      - checked out
+      - rhythm
+    summary: A rhythmic tapping practice to wake up sensation through the body.
+    steps:
+      - Use open hands or fingertips.
+      - Tap lightly along your arms, chest, belly, legs, and shoulders.
+      - Keep the pressure comfortable.
+      - Notice which areas feel awake, dull, warm, or tender.
+      - Finish by placing both hands somewhere steady.
+    why_it_helps: Rhythmic touch can make body sensation clearer when attention feels far away or dull.
+    duration_minutes: 5
+    intensity: low
+    avoid_when:
+      - bruising
+      - injury
+      - areas that feel painful

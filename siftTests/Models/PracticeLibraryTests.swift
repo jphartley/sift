@@ -19,6 +19,17 @@ struct PracticeLibraryTests {
         }
     }
 
+    @Test func allPracticesHaveNonEmptyMetadata() async {
+        for practice in Practice.all {
+            #expect(!practice.labels.isEmpty)
+            #expect(!practice.bestFor.isEmpty)
+            #expect(!practice.summary.isEmpty)
+            #expect(!practice.steps.isEmpty)
+            #expect(!practice.whyItHelps.isEmpty)
+            #expect(!practice.intensity.isEmpty)
+        }
+    }
+
     @Test func allPracticesHavePositiveDuration() async {
         for practice in Practice.all {
             #expect(practice.durationMinutes > 0)
@@ -34,8 +45,18 @@ struct PracticeLibraryTests {
             keywords:
               - test
               - example
-            description: A test practice description.
+            labels:
+              - calm
+            best_for:
+              - testing the loader
+            summary: A test practice summary.
+            steps:
+              - Try the test step.
+            why_it_helps: It verifies richer practice metadata.
             duration_minutes: 5
+            intensity: low
+            avoid_when:
+              - never
         """
         let practices = try Practice.load(from: yaml)
         #expect(practices.count == 1)
@@ -44,8 +65,14 @@ struct PracticeLibraryTests {
         #expect(p.name == "Test Practice")
         #expect(p.category == "Test")
         #expect(p.keywords == ["test", "example"])
-        #expect(p.description == "A test practice description.")
+        #expect(p.labels == ["calm"])
+        #expect(p.bestFor == ["testing the loader"])
+        #expect(p.summary == "A test practice summary.")
+        #expect(p.steps == ["Try the test step."])
+        #expect(p.whyItHelps == "It verifies richer practice metadata.")
         #expect(p.durationMinutes == 5)
+        #expect(p.intensity == "low")
+        #expect(p.avoidWhen == ["never"])
     }
 
     @Test func ignoresUnknownKeys() throws {
@@ -56,8 +83,17 @@ struct PracticeLibraryTests {
             category: Test
             keywords:
               - test
-            description: Has extra fields.
+            labels:
+              - calm
+            best_for:
+              - loader checks
+            summary: Has extra fields.
+            steps:
+              - Decode this.
+            why_it_helps: It keeps decoding resilient.
             duration_minutes: 2
+            intensity: low
+            avoid_when: []
             unknown_field: ignored
             another_unknown: also_ignored
         """
@@ -86,8 +122,17 @@ struct PracticeLibraryTests {
             category: Test
             keywords:
               - test
-            description: Duration is a string.
+            labels:
+              - calm
+            best_for:
+              - invalid decoding
+            summary: Duration is a string.
+            steps:
+              - Decode this.
+            why_it_helps: It should throw.
             duration_minutes: "not_a_number"
+            intensity: low
+            avoid_when: []
         """
         #expect(throws: (any Error).self) {
             try Practice.load(from: yaml)
@@ -102,15 +147,33 @@ struct PracticeLibraryTests {
             category: A
             keywords:
               - one
-            description: First practice.
+            labels:
+              - first
+            best_for:
+              - first checks
+            summary: First practice.
+            steps:
+              - Do the first thing.
+            why_it_helps: It checks ordering.
             duration_minutes: 1
+            intensity: low
+            avoid_when: []
           - id: second
             name: Second
             category: B
             keywords:
               - two
-            description: Second practice.
+            labels:
+              - second
+            best_for:
+              - second checks
+            summary: Second practice.
+            steps:
+              - Do the second thing.
+            why_it_helps: It checks multiple decode.
             duration_minutes: 2
+            intensity: low
+            avoid_when: []
         """
         let practices = try Practice.load(from: yaml)
         #expect(practices.count == 2)

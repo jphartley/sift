@@ -9,7 +9,9 @@ struct GeminiPromptBuilder {
         parts.append("## Practice Library")
         parts.append("")
         for practice in practices {
-            parts.append("- **\(practice.name)** (id: `\(practice.id)`, \(practice.category), ~\(practice.durationMinutes)m): \(practice.description)")
+            let labels = practice.labels.joined(separator: ", ")
+            let bestFor = practice.bestFor.joined(separator: "; ")
+            parts.append("- **\(practice.name)** (id: `\(practice.id)`, \(practice.category), ~\(practice.durationMinutes)m, intensity: \(practice.intensity), labels: \(labels)): \(practice.summary) Best for: \(bestFor). Why it helps: \(practice.whyItHelps)")
         }
 
         if !history.isEmpty {
