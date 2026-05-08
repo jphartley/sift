@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define how Gemini analyzes check-in transcripts, routes between models, handles API keys and failures, and returns practice recommendations.
+
+## Requirements
 
 ### Requirement: System uses Gemini to recommend practices
 

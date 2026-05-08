@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define how `GeminiService` remains the production recommendation facade while delegating prompt construction, parsing, and routing to focused collaborators.
+
+## Requirements
 
 ### Requirement: Gemini recommendation client composes focused collaborators
 The system SHALL keep `GeminiService` as the production recommendation client facade while delegating prompt construction, response parsing, and model-routing decisions to focused internal collaborators.

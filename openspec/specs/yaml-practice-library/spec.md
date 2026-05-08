@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define how the bundled YAML practice library is loaded, decoded, and validated.
+
+## Requirements
 
 ### Requirement: System loads practices from YAML resource file
 

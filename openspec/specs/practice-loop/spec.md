@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define the persisted practice loop around suggestions, attempts, helpfulness ratings, optional notes, session history, and deletion.
+
+## Requirements
 
 ### Requirement: System maintains a curated practice library
 

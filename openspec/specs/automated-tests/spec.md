@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define the automated test coverage expected for models, SwiftData behavior, view models, Gemini collaborators, async task lifecycle, and local secret fallback behavior.
+
+## Requirements
 
 ### Requirement: Practice library data is valid
 

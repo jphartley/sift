@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define the service boundaries that keep the voice check-in flow testable without coupling view models to concrete audio, transcription, recommendation, or SwiftData implementations.
+
+## Requirements
 
 ### Requirement: Check-in flow dependencies are injectable
 The system SHALL define narrow service protocols for the voice check-in flow so the recorder, transcription client, recommendation client, and session persistence/history store can be replaced in tests without changing user-facing behavior.

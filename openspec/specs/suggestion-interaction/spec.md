@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define how practice suggestion and reflection screens behave when users review recommendations, expand practice details, choose a practice, or navigate back.
+
+## Requirements
 
 ### Requirement: Practice cards use accordion pattern with separate commit action
 

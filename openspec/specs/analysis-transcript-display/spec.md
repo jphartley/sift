@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define how the app displays the captured transcript while Gemini analysis is in progress.
+
+## Requirements
 
 ### Requirement: Transcript is displayed during analysis phase
 

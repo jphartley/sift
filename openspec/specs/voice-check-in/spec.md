@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Define the end-to-end voice check-in flow from model loading and recording through transcription, analysis, suggestions, persistence, and task cancellation.
+
+## Requirements
 
 ### Requirement: User can start a voice check-in
 

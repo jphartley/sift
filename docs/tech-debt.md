@@ -34,11 +34,3 @@ Suggested direction:
 - Avoid a broad design system until the interaction model settles.
 
 ## Low Priority
-
-### Keep OpenSpec archive/spec sync tidy
-
-Archived changes are useful for context, but the main specs should remain the source of truth after a change is archived.
-
-Suggested direction:
-- Periodically scan `openspec/specs/` for requirements that no longer match implementation.
-- Prefer modifying or removing stale requirements during future OpenSpec changes rather than letting contradictions pile up.
