@@ -56,7 +56,10 @@ sift/
     CheckInServices.swift      — Protocol boundaries for audio recording, transcription, recommendations, and session persistence/history; includes SwiftDataSessionStore
     AudioRecorderService.swift  — AVAudioRecorder (PCM 16kHz mono WAV, temp file)
     TranscriptionService.swift  — WhisperKit wrapper, loads "openai_whisper-base.en" model
-    GeminiService.swift         — GoogleGenerativeAI wrapper, two-tier Flash/Pro model routing, structured JSON response schema, builds prompts from transcript + library + user history
+    GeminiService.swift         — RecommendationClient facade for Gemini recommendations
+    GeminiPromptBuilder.swift   — Builds prompts from transcript + library + user history
+    GeminiRecommendationParser.swift — Decodes and validates structured Gemini JSON responses
+    GeminiRecommendationRouter.swift — GoogleGenerativeAI request boundary + Flash/Pro routing + retry classification
     Secrets.swift.example       — Template for local Gemini API key; real Secrets.swift is gitignored
   ViewModels/
     RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/reflecting/error)
@@ -79,7 +82,10 @@ siftTests/
       RecordingViewModelTests.swift        — fake-backed check-in flow, persistence, retry, and failure-path tests
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality
-      GeminiServiceTests.swift             — error descriptions + prompt construction + retryable error detection
+      GeminiServiceTests.swift             — recommendation data/error basics + secrets access
+      GeminiPromptBuilderTests.swift       — prompt construction
+      GeminiRecommendationParserTests.swift — structured response parsing and validation
+      GeminiRecommendationRouterTests.swift — Flash/Pro routing + retryable error detection
 siftUITests/
     siftUITests.swift                      — app launch + tab navigation smoke test
 ```
