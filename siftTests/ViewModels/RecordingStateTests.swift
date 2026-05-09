@@ -70,4 +70,16 @@ struct RecordingStateTests {
         let b = RecordingState.suggesting(transcript: "hello", practices: [], rationale: "", wasEscalated: false, relevanceByID: [:])
         #expect(a != b)
     }
+
+    @Test func recoveryWithSamePresentationIsEqual() async {
+        let a = RecordingState.recovery(.analysisFailed)
+        let b = RecordingState.recovery(.analysisFailed)
+        #expect(a == b)
+    }
+
+    @Test func recoveryWithDifferentPresentationIsNotEqual() async {
+        let a = RecordingState.recovery(.analysisFailed)
+        let b = RecordingState.recovery(.emptySpeech)
+        #expect(a != b)
+    }
 }

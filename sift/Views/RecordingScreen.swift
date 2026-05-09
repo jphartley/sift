@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 public enum RecordingScreenOrientation {
     public static let heading = "Take a moment to arrive"
@@ -15,6 +16,10 @@ public enum RecordingScreenOrientation {
     ]
 }
 
+enum RecordingScreenSettings {
+    static let appSettingsURL = URL(string: UIApplication.openSettingsURLString)
+}
+
 struct RecordingScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(TranscriptionService.self) private var transcriptionService
@@ -27,8 +32,8 @@ struct RecordingScreen: View {
                 switch transcriptionService.modelState {
                 case .downloading, .loading, .notLoaded:
                     loadingView
-                case .failed(let message):
-                    errorView(message) {
+                case .failed:
+                    recoveryView(.modelLoadingFailed) {
                         Task {
                             await transcriptionService.loadModel()
                         }
@@ -70,6 +75,8 @@ struct RecordingScreen: View {
                                 viewModel.completeReflection(wasHelpful: wasHelpful, notes: notes)
                             }
                         )
+                    case .recovery(let presentation):
+                        recoveryView(presentation)
                     case .error(let message):
                         errorView(message) {
                             viewModel.retryAnalysis()
@@ -304,11 +311,52 @@ struct RecordingScreen: View {
         }
     }
 
+    private func recoveryView(
+        _ presentation: CheckInRecoveryPresentation,
+        primaryOverride: (() -> Void)? = nil
+    ) -> some View {
+        VStack(spacing: 18) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 38))
+                .foregroundStyle(.blue)
+
+            VStack(spacing: 8) {
+                Text(presentation.title)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+
+                Text(presentation.message)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            Button(presentation.primaryActionLabel) {
+                if let primaryOverride {
+                    primaryOverride()
+                } else {
+                    handleRecoveryAction(presentation.primaryAction)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+
+            if let secondaryActionLabel = presentation.secondaryActionLabel,
+               let secondaryAction = presentation.secondaryAction {
+                Button(secondaryActionLabel) {
+                    handleRecoveryAction(secondaryAction)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding()
+    }
+
     private func errorView(_ message: String, retry: @escaping () -> Void) -> some View {
         VStack(spacing: 16) {
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: "info.circle.fill")
                 .font(.system(size: 40))
-                .foregroundStyle(.orange)
+                .foregroundStyle(.blue)
             Text(message)
                 .font(.body)
                 .multilineTextAlignment(.center)
@@ -317,6 +365,27 @@ struct RecordingScreen: View {
                 retry()
             }
             .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func handleRecoveryAction(_ action: CheckInRecoveryPresentation.Action) {
+        switch action {
+        case .openSettings:
+            if let url = RecordingScreenSettings.appSettingsURL {
+                UIApplication.shared.open(url)
+            }
+        case .tryAgain:
+            _ = viewModel.retryPermission()
+        case .retryModelLoading:
+            Task {
+                await transcriptionService.loadModel()
+            }
+        case .retrySuggestions:
+            viewModel.retryAnalysis()
+        case .recordAgain:
+            viewModel.recordAgain()
+        case .trySavingAgain:
+            viewModel.retrySave()
         }
     }
 

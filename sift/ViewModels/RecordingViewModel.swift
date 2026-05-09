@@ -10,6 +10,7 @@ enum RecordingState: Equatable {
     case suggesting(transcript: String, practices: [Practice], rationale: String, wasEscalated: Bool, relevanceByID: [String: String])
     case practicing(practice: Practice, relevance: String)
     case reflecting(practiceName: String)
+    case recovery(CheckInRecoveryPresentation)
     case error(String)
 }
 
@@ -51,7 +52,7 @@ final class RecordingViewModel {
 
         let hasPermission = await audioRecorder.requestPermission()
         guard hasPermission else {
-            state = .error("Microphone access denied. Enable it in Settings.")
+            state = .recovery(.microphonePermissionDenied)
             return
         }
 
@@ -68,7 +69,7 @@ final class RecordingViewModel {
             startMeterPolling()
         } catch {
             cancelMeterPolling()
-            state = .error("Failed to start recording: \(error.localizedDescription)")
+            state = .recovery(.emptySpeech)
         }
     }
 
@@ -80,12 +81,12 @@ final class RecordingViewModel {
         state = .transcribing
 
         guard let recordingURL = currentRecordingURL else {
-            state = .error("No recording found")
+            state = .recovery(.emptySpeech)
             return nil
         }
 
         guard let transcriptionService else {
-            state = .error("Transcription service not configured")
+            state = .recovery(.modelLoadingFailed)
             return nil
         }
 
@@ -94,28 +95,39 @@ final class RecordingViewModel {
             do {
                 let (text, transcriptionMs) = try await transcriptionService.transcribe(audioURL: recordingURL)
                 guard !Task.isCancelled, analysisTaskID == taskID else { return }
+                let transcript = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
                 try? FileManager.default.removeItem(at: recordingURL)
                 currentRecordingURL = nil
 
-                lastTranscript = text
+                guard !transcript.isEmpty else {
+                    lastTranscript = ""
+                    pendingSession = nil
+                    state = .recovery(.emptySpeech)
+                    return
+                }
+
+                lastTranscript = transcript
 
                 pendingSession = Session(
                     timestamp: Date(),
-                    transcript: text,
+                    transcript: transcript,
                     audioDuration: audioDuration,
                     transcriptionDurationMs: transcriptionMs
                 )
 
                 state = .analyzing
 
-                let result = try await analyzeAndSuggest(transcript: text)
+                let result = try await analyzeAndSuggest(transcript: transcript)
                 guard !Task.isCancelled, analysisTaskID == taskID else { return }
 
-                try applyRecommendationResult(result, transcript: text)
+                try applyRecommendationResult(result, transcript: transcript)
+            } catch GeminiError.emptyPractices {
+                guard !Task.isCancelled, analysisTaskID == taskID else { return }
+                state = .recovery(.emptySuggestions)
             } catch {
                 guard !Task.isCancelled, analysisTaskID == taskID else { return }
-                state = .error("Analyzing failed: \(error.localizedDescription)")
+                state = pendingSession == nil ? .recovery(.emptySpeech) : .recovery(.analysisFailed)
             }
 
             if analysisTaskID == taskID {
@@ -157,7 +169,7 @@ final class RecordingViewModel {
         }
         let practices = resolvePractices(from: result)
         guard !practices.isEmpty else {
-            state = .error(GeminiError.emptyPractices.localizedDescription)
+            state = .recovery(.emptySuggestions)
             return
         }
         currentAttempt = nil
@@ -195,9 +207,12 @@ final class RecordingViewModel {
                 guard !Task.isCancelled, analysisTaskID == taskID else { return }
 
                 try applyRecommendationResult(result, transcript: transcript)
+            } catch GeminiError.emptyPractices {
+                guard !Task.isCancelled, analysisTaskID == taskID else { return }
+                state = .recovery(.emptySuggestions)
             } catch {
                 guard !Task.isCancelled, analysisTaskID == taskID else { return }
-                state = .error("Analyzing failed: \(error.localizedDescription)")
+                state = .recovery(.analysisFailed)
             }
 
             if analysisTaskID == taskID {
@@ -215,6 +230,29 @@ final class RecordingViewModel {
         }
         cancelMeterPolling()
         cancelAnalysisTask()
+    }
+
+    func retryPermission() -> Task<Void, Never> {
+        Task { @MainActor in
+            await setup()
+        }
+    }
+
+    func recordAgain() {
+        pendingSession = nil
+        currentAttempt = nil
+        currentRecordingURL = nil
+        recordingDuration = 0
+        audioLevel = -160
+        state = .ready
+    }
+
+    func retrySave() {
+        guard let session = pendingSession else {
+            state = .ready
+            return
+        }
+        saveAndReset(session)
     }
 
     private func analyzeAndSuggest(transcript: String) async throws -> RecommendationResult {
@@ -261,7 +299,7 @@ final class RecordingViewModel {
 
     private func saveAndReset(_ session: Session) {
         guard let sessionStore else {
-            state = .error("Session store not configured")
+            state = .recovery(.saveFailed)
             return
         }
 
@@ -269,7 +307,7 @@ final class RecordingViewModel {
             try sessionStore.save(session)
             resetAfterSave()
         } catch {
-            state = .error("Saving failed: \(error.localizedDescription)")
+            state = .recovery(.saveFailed)
         }
     }
 

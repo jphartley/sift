@@ -39,7 +39,19 @@ struct RecordingViewModelTests {
 
         await viewModel.setup()
 
-        #expect(viewModel.state == .error("Microphone access denied. Enable it in Settings."))
+        #expect(viewModel.state == .recovery(.microphonePermissionDenied))
+    }
+
+    @Test func retryPermissionRequestsPermissionAgain() async {
+        let audioRecorder = FakeAudioRecorder(permissionGranted: true)
+        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        viewModel.state = .recovery(.microphonePermissionDenied)
+
+        let task = viewModel.retryPermission()
+        await task.value
+
+        #expect(audioRecorder.permissionRequestCount == 1)
+        #expect(viewModel.state == .ready)
     }
 
     @Test func stopRecordingTranscribesAndShowsSuggestions() async {
@@ -95,14 +107,37 @@ struct RecordingViewModelTests {
             await task.value
         }
 
-        guard case .error(let message) = viewModel.state else {
-            #expect(Bool(false), "Expected .error state")
+        guard case .recovery(let presentation) = viewModel.state else {
+            #expect(Bool(false), "Expected .recovery state")
             return
         }
 
-        #expect(message.contains("Analyzing failed"))
+        #expect(presentation == .analysisFailed)
         #expect(viewModel.pendingSession?.transcript == "I feel anxious")
         #expect(viewModel.lastTranscript == "I feel anxious")
+    }
+
+    @Test func emptySpeechShowsRecordAgainRecoveryAndSkipsRecommendation() async {
+        let transcriptionClient = FakeTranscriptionClient(text: "   \n", durationMs: 25)
+        let recommendationClient = FakeRecommendationClient()
+        let (viewModel, _, _, _, _) = makeViewModel(
+            transcriptionClient: transcriptionClient,
+            recommendationClient: recommendationClient
+        )
+        viewModel.state = .ready
+
+        viewModel.startRecording()
+        if let task = viewModel.stopRecording() {
+            await task.value
+        }
+
+        #expect(viewModel.state == .recovery(.emptySpeech))
+        #expect(recommendationClient.receivedTranscript == nil)
+        #expect(viewModel.pendingSession == nil)
+
+        viewModel.recordAgain()
+
+        #expect(viewModel.state == .ready)
     }
 
     @Test func retryAnalysisUsesPendingSession() async {
@@ -127,6 +162,41 @@ struct RecordingViewModelTests {
         }
         #expect(practices.map(\.id) == ["stretch-break"])
         #expect(rationale == "Try moving gently.")
+    }
+
+    @Test func retryAfterAnalysisFailureReusesPendingTranscript() async {
+        let recommendationClient = SequencedRecommendationClient(results: [
+            .failure(GeminiError.networkError("offline")),
+            .success(RecommendationResult(
+                rationale: "Try breathing.",
+                practices: [(practiceID: "box-breathing", relevance: "Breathing can help.")],
+                confidence: 0.9,
+                modelUsed: "gemini-3-flash-preview",
+                wasEscalated: false
+            ))
+        ])
+        let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
+        viewModel.state = .ready
+
+        viewModel.startRecording()
+        if let task = viewModel.stopRecording() {
+            await task.value
+        }
+
+        #expect(viewModel.state == .recovery(.analysisFailed))
+        #expect(viewModel.pendingSession?.transcript == "I feel anxious")
+
+        if let retryTask = viewModel.retryAnalysis() {
+            await retryTask.value
+        }
+
+        #expect(recommendationClient.receivedTranscripts == ["I feel anxious", "I feel anxious"])
+        guard case .suggesting(let transcript, let practices, _, _, _) = viewModel.state else {
+            #expect(Bool(false), "Expected .suggesting state")
+            return
+        }
+        #expect(transcript == "I feel anxious")
+        #expect(practices.map(\.id) == ["box-breathing"])
     }
 
     @Test func meterPollingStopsUpdatingAfterStopRecording() async {
@@ -352,14 +422,34 @@ struct RecordingViewModelTests {
 
         viewModel.completeReflection(wasHelpful: false, notes: nil)
 
-        guard case .error(let message) = viewModel.state else {
-            #expect(Bool(false), "Expected .error state")
+        guard case .recovery(let presentation) = viewModel.state else {
+            #expect(Bool(false), "Expected .recovery state")
             return
         }
-        #expect(message.contains("Saving failed"))
+        #expect(presentation == .saveFailed)
         #expect(sessionStore.savedSessions.isEmpty)
         #expect(viewModel.pendingSession === session)
         #expect(viewModel.currentAttempt === attempt)
+    }
+
+    @Test func saveFailureCanRetrySaveWithReflectionData() {
+        let sessionStore = FakeSessionStore(saveError: TestError.saveFailed)
+        let (viewModel, _, _, _, _) = makeViewModel(sessionStore: sessionStore)
+        let session = Session(transcript: "I feel tired")
+        let attempt = PracticeAttempt(practiceID: "body-scan", practiceName: "Body Scan")
+        session.attempts.append(attempt)
+        viewModel.pendingSession = session
+        viewModel.currentAttempt = attempt
+
+        viewModel.completeReflection(wasHelpful: false, notes: "still tense")
+
+        sessionStore.saveError = nil
+        viewModel.retrySave()
+
+        #expect(sessionStore.savedSessions.count == 1)
+        #expect(sessionStore.savedSessions[0].attempts[0].wasHelpful == false)
+        #expect(sessionStore.savedSessions[0].attempts[0].notes == "still tense")
+        #expect(viewModel.state == .ready)
     }
 
     @Test func historyFromStoreIsPassedToRecommendationClient() async {
@@ -390,7 +480,7 @@ struct RecordingViewModelTests {
         #expect(recommendationClient.receivedHistory[0].wasHelpful == true)
     }
 
-    @Test func noResolvablePracticesShowsError() async {
+    @Test func noResolvablePracticesShowsEmptySuggestionsRecovery() async {
         let recommendationClient = FakeRecommendationClient(result: RecommendationResult(
             rationale: "Try something.",
             practices: [(practiceID: "missing-practice", relevance: "Not in the library.")],
@@ -406,11 +496,53 @@ struct RecordingViewModelTests {
             await task.value
         }
 
-        guard case .error(let message) = viewModel.state else {
-            #expect(Bool(false), "Expected .error state")
+        guard case .recovery(let presentation) = viewModel.state else {
+            #expect(Bool(false), "Expected .recovery state")
             return
         }
-        #expect(message.contains("Gemini did not recommend any practices"))
+        #expect(presentation == .emptySuggestions)
+        #expect(viewModel.pendingSession?.transcript == "I feel anxious")
+    }
+
+    @Test func retryAfterEmptySuggestionsReusesPendingTranscript() async {
+        let recommendationClient = SequencedRecommendationClient(results: [
+            .success(RecommendationResult(
+                rationale: "Try something.",
+                practices: [(practiceID: "missing-practice", relevance: "Not in the library.")],
+                confidence: 0.8,
+                modelUsed: "gemini-3-flash-preview",
+                wasEscalated: false
+            )),
+            .success(RecommendationResult(
+                rationale: "Try breathing.",
+                practices: [(practiceID: "box-breathing", relevance: "Breathing can help.")],
+                confidence: 0.9,
+                modelUsed: "gemini-3-flash-preview",
+                wasEscalated: false
+            ))
+        ])
+        let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
+        viewModel.state = .ready
+
+        viewModel.startRecording()
+        if let task = viewModel.stopRecording() {
+            await task.value
+        }
+
+        #expect(viewModel.state == .recovery(.emptySuggestions))
+
+        if let retryTask = viewModel.retryAnalysis() {
+            await retryTask.value
+        }
+
+        #expect(recommendationClient.receivedTranscripts == ["I feel anxious", "I feel anxious"])
+        guard case .suggesting(let transcript, let practices, let rationale, _, _) = viewModel.state else {
+            #expect(Bool(false), "Expected .suggesting state")
+            return
+        }
+        #expect(transcript == "I feel anxious")
+        #expect(practices.map(\.id) == ["box-breathing"])
+        #expect(rationale == "Try breathing.")
     }
 
     @Test func dismissPracticeReturnsToSuggestingWithOriginalDataWithoutLoggingAttempt() {
@@ -471,6 +603,7 @@ private final class FakeAudioRecorder: AudioRecording {
     var recordingDuration: TimeInterval
     var audioLevel: Float
     var didRequestPermission = false
+    var permissionRequestCount = 0
     var didStartRecording = false
     var didStopRecording = false
 
@@ -497,6 +630,7 @@ private final class FakeAudioRecorder: AudioRecording {
 
     func requestPermission() async -> Bool {
         didRequestPermission = true
+        permissionRequestCount += 1
         return permissionGranted
     }
 
@@ -585,12 +719,29 @@ private final class ControlledRecommendationClient: RecommendationClient {
     }
 }
 
+private final class SequencedRecommendationClient: RecommendationClient {
+    var receivedTranscripts: [String] = []
+    private var results: [Result<RecommendationResult, Error>]
+
+    init(results: [Result<RecommendationResult, Error>]) {
+        self.results = results
+    }
+
+    func recommend(transcript: String, history: [SessionHistoryEntry]) async throws -> RecommendationResult {
+        receivedTranscripts.append(transcript)
+        guard !results.isEmpty else {
+            throw TestError.noMoreResults
+        }
+        return try results.removeFirst().get()
+    }
+}
+
 private final class FakeSessionStore: SessionStore {
     var savedSessions: [Session] = []
     var deletedSessions: [Session] = []
     var history: [SessionHistoryEntry]
 
-    private let saveError: Error?
+    var saveError: Error?
     private let deleteError: Error?
     private let historyError: Error?
 
@@ -624,8 +775,12 @@ private final class FakeSessionStore: SessionStore {
 
 private enum TestError: LocalizedError {
     case saveFailed
+    case noMoreResults
 
     var errorDescription: String? {
-        "save failed"
+        switch self {
+        case .saveFailed: "save failed"
+        case .noMoreResults: "no more results"
+        }
     }
 }
