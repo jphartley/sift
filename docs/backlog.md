@@ -15,9 +15,6 @@ Audience assumptions:
 
 | Item | Priority | Status | Notes |
 |---|---|---|---|
-| First-screen orientation | P0 | To Do | Replace the bare mic entry point with clear guidance: what to say, suggested length, what happens next, and how this leads to practice recommendations. |
-| Privacy and trust explanation | P0 | To Do | Add a plain-language privacy sheet or equivalent: audio is recorded on device, transcription happens on device, transcript is sent for AI analysis, Gemini is the provider, the developer does not have access to check-ins, history is stored on device, and users can delete check-ins. |
-| Emotional safety boundaries | P0 | To Do | State that Sift is for reflection and practice suggestions, not therapy or crisis support; encourage users to stop practices that feel wrong and seek urgent support when needed. |
 | First-time prompt examples | P1 | To Do | Add example check-in prompts such as feeling tense after a conversation, replaying something from the day, or wanting one small practice before bed. |
 | Human-facing suggestion explainability | P1 | To Do | Keep "Why this was suggested" while making rationale feel like coaching instead of model output; hide implementation details such as model escalation from beta users unless needed for debugging. |
 | Calm recovery states | P1 | To Do | Improve copy and actions for microphone permission denial, model download/loading, empty speech, analysis failure, and network/API failure. |

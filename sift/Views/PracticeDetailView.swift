@@ -6,7 +6,7 @@ struct PracticeDetailView: View {
     let onBack: () -> Void
     let onComplete: () -> Void
 
-    private var showsGentleNote: Bool {
+    var showsGentleNote: Bool {
         practice.intensity == "high" || !practice.avoidWhen.isEmpty
     }
 
@@ -101,19 +101,27 @@ struct PracticeDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    var gentleNoteHighIntensityText: String {
+        "This is a higher-intensity practice. Go slowly, adapt, or stop if it does not feel right today."
+    }
+
+    var gentleNoteAvoidWhenText: String {
+        "Avoid this when: \(practice.avoidWhen.joined(separator: ", ")). You can adapt or stop the practice."
+    }
+
     private var gentleNote: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("A gentle note", systemImage: "info.circle")
                 .font(.headline)
 
             if practice.intensity == "high" {
-                Text("This is a higher-intensity practice. Go slowly and stop if it does not feel right today.")
+                Text(gentleNoteHighIntensityText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
             if !practice.avoidWhen.isEmpty {
-                Text("Avoid this when: \(practice.avoidWhen.joined(separator: ", ")).")
+                Text(gentleNoteAvoidWhenText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

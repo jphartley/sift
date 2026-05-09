@@ -47,7 +47,9 @@ enum PrivacyContent {
             id: "safety",
             title: "Safety",
             paragraphs: [
-                "Sift is for reflection and practice suggestions. More safety guidance will live here as the beta gets ready."
+                "Sift is here for reflection and practice suggestions. It is not a therapist, doctor, or crisis service.",
+                "You are always allowed to pause, skip, adapt, or stop a practice. If something feels too much, choose the gentlest next step available: put the phone down, feel your feet, take a breath, or reach out to someone you trust.",
+                "If you feel at risk of hurting yourself or someone else, or you do not feel safe, please contact emergency support or a trusted person right away."
             ]
         ),
         PrivacySection(

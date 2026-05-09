@@ -57,6 +57,36 @@ struct PrivacyContentTests {
         #expect(PrivacyContent.sections.contains { $0.title == "Safety" })
     }
 
+    @Test func safetySectionStatesPurposeAndNonTherapyBoundary() {
+        let text = safetySectionText()
+
+        #expect(text.contains("Sift is here for reflection and practice suggestions."))
+        #expect(text.contains("It is not a therapist, doctor, or crisis service."))
+    }
+
+    @Test func safetySectionSupportsUserAgency() {
+        let text = safetySectionText()
+
+        #expect(text.contains("pause, skip, adapt, or stop a practice"))
+        #expect(text.contains("choose the gentlest next step available"))
+        #expect(text.contains("reach out to someone you trust"))
+    }
+
+    @Test func safetySectionGivesUrgentSupportGuidance() {
+        let text = safetySectionText()
+
+        #expect(text.contains("risk of hurting yourself or someone else"))
+        #expect(text.contains("do not feel safe"))
+        #expect(text.contains("contact emergency support or a trusted person right away"))
+    }
+
+    private func safetySectionText() -> String {
+        guard let section = PrivacyContent.sections.first(where: { $0.title == "Safety" }) else {
+            return ""
+        }
+        return section.paragraphs.joined(separator: "\n")
+    }
+
     private func allPrivacyText() -> String {
         (PrivacyContent.intro + PrivacyContent.sections.flatMap { [$0.title] + $0.paragraphs })
             .joined(separator: "\n")
