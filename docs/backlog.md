@@ -2,6 +2,27 @@
 
 Tracking voice check-in MVP status, product backlog items, and future follow-up work.
 
+## Internal TestFlight Beta Readiness
+
+Goal: a trusted person should be able to open Sift, understand what to say, feel safe saying it, receive a practice, and know what happened to their data without an in-person explanation.
+
+Audience assumptions:
+- Initial beta testers are close friends or people from trusted therapeutic settings.
+- Check-ins may be vulnerable, so privacy confidence and emotional safety are core beta requirements.
+- Sift should feel like a practical coach that recommends practices, while remaining open to journaling and reflection use cases.
+- The first beta target is Internal TestFlight, not broad external distribution.
+- The main flow does not need to name the underlying LLM, but privacy copy should clearly explain what data is sent where.
+
+| Item | Priority | Status | Notes |
+|---|---|---|---|
+| First-screen orientation | P0 | To Do | Replace the bare mic entry point with clear guidance: what to say, suggested length, what happens next, and how this leads to practice recommendations. |
+| Privacy and trust explanation | P0 | To Do | Add a plain-language privacy sheet or equivalent: audio is recorded on device, transcription happens on device, transcript is sent for AI analysis, Gemini is the provider, the developer does not have access to check-ins, history is stored on device, and users can delete check-ins. |
+| Emotional safety boundaries | P0 | To Do | State that Sift is for reflection and practice suggestions, not therapy or crisis support; encourage users to stop practices that feel wrong and seek urgent support when needed. |
+| First-time prompt examples | P1 | To Do | Add example check-in prompts such as feeling tense after a conversation, replaying something from the day, or wanting one small practice before bed. |
+| Human-facing suggestion explainability | P1 | To Do | Keep "Why this was suggested" while making rationale feel like coaching instead of model output; hide implementation details such as model escalation from beta users unless needed for debugging. |
+| Calm recovery states | P1 | To Do | Improve copy and actions for microphone permission denial, model download/loading, empty speech, analysis failure, and network/API failure. |
+| Internal TestFlight operations | P2 | To Do | Prepare build/version numbers, signing/archive/upload, internal tester group, TestFlight "What to Test", feedback email, full test run, and a quick device smoke test. |
+
 ## MVP Feature Status
 
 PRD and supplement requirements against the voice check-in MVP.
