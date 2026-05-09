@@ -10,6 +10,25 @@ struct SwiftDataTests {
         try TestHelpers.makeContainer()
     }
 
+    private func makeSession(
+        index: Int,
+        wasHelpful: Bool? = nil,
+        practiceName: String? = nil
+    ) -> Session {
+        let session = Session(
+            timestamp: Date(timeIntervalSince1970: Double(index)),
+            transcript: "full transcript \(index)"
+        )
+        if let practiceName {
+            session.attempts.append(PracticeAttempt(
+                practiceID: "practice-\(index)",
+                practiceName: practiceName,
+                wasHelpful: wasHelpful
+            ))
+        }
+        return session
+    }
+
     @Test func cascadeDeleteRemovesAttempts() throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -133,5 +152,75 @@ struct SwiftDataTests {
         #expect(sessions[0].geminiRationale == nil)
         #expect(sessions[0].geminiModelUsed == nil)
         #expect(sessions[0].geminiConfidence == nil)
+    }
+
+    @Test func recommendationHistoryIncludesAllSessionsUnderLimit() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = SwiftDataSessionStore(modelContext: context)
+
+        for index in 0..<5 {
+            context.insert(makeSession(
+                index: index,
+                wasHelpful: index == 1,
+                practiceName: index == 1 ? "Helpful Practice" : nil
+            ))
+        }
+        try context.save()
+
+        let history = try store.recommendationHistory()
+
+        #expect(history.count == 5)
+        #expect(history.map(\.transcript) == [
+            "full transcript 4",
+            "full transcript 3",
+            "full transcript 2",
+            "full transcript 1",
+            "full transcript 0",
+        ])
+        #expect(history[3].practiceName == "Helpful Practice")
+        #expect(history[3].wasHelpful == true)
+    }
+
+    @Test func recommendationHistorySelectsRecentPlusOlderHelpfulSessions() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = SwiftDataSessionStore(modelContext: context)
+
+        for index in 0..<25 {
+            let helpfulOlder = [2, 5, 13].contains(index)
+            let helpfulRecent = index == 23
+            context.insert(makeSession(
+                index: index,
+                wasHelpful: helpfulOlder || helpfulRecent,
+                practiceName: helpfulOlder || helpfulRecent ? "Practice \(index)" : nil
+            ))
+        }
+        try context.save()
+
+        let history = try store.recommendationHistory()
+        let transcripts = history.map(\.transcript)
+
+        #expect(history.count == 13)
+        #expect(transcripts == [
+            "full transcript 24",
+            "full transcript 23",
+            "full transcript 22",
+            "full transcript 21",
+            "full transcript 20",
+            "full transcript 19",
+            "full transcript 18",
+            "full transcript 17",
+            "full transcript 16",
+            "full transcript 15",
+            "full transcript 13",
+            "full transcript 5",
+            "full transcript 2",
+        ])
+        #expect(!transcripts.contains("full transcript 14"))
+        #expect(!transcripts.contains("full transcript 1"))
+        #expect(Set(transcripts).count == transcripts.count)
+        #expect(history.first { $0.transcript == "full transcript 13" }?.practiceName == "Practice 13")
+        #expect(history.first { $0.transcript == "full transcript 13" }?.wasHelpful == true)
     }
 }

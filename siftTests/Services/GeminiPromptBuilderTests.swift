@@ -33,6 +33,17 @@ struct GeminiPromptBuilderTests {
         #expect(prompt.contains("Breathwork"))
         #expect(prompt.contains("~3m"))
         #expect(prompt.contains("box-breathing"))
+        #expect(prompt.contains("racing thoughts"))
+    }
+
+    @Test func promptOmitsRichPracticeExecutionDetails() {
+        let builder = GeminiPromptBuilder()
+        let prompt = builder.buildPrompt(transcript: "test", history: [])
+
+        #expect(!prompt.contains("Inhale for 4 seconds."))
+        #expect(!prompt.contains("feeling dizzy"))
+        #expect(!prompt.contains("A predictable rhythm gives attention somewhere steady to land."))
+        #expect(!prompt.contains("Why it helps"))
     }
 
     @Test func promptWithEmptyHistoryHasNoHistorySection() {
@@ -112,6 +123,22 @@ struct GeminiPromptBuilderTests {
         }
         let prompt = builder.buildPrompt(transcript: transcript, history: history)
         #expect(prompt.count < 100_000)
+    }
+
+    @Test func expandedLibraryPromptUsesCompactCatalog() throws {
+        guard let url = Bundle.main.url(forResource: "practices", withExtension: "yaml") else {
+            return
+        }
+        let yamlString = try String(contentsOf: url, encoding: .utf8)
+        let practices = try Practice.load(from: yamlString)
+        let builder = GeminiPromptBuilder(practices: practices)
+        let prompt = builder.buildPrompt(transcript: "I feel tense", history: [])
+
+        #expect(practices.count == 140)
+        #expect(prompt.contains("box-breathing"))
+        #expect(prompt.contains("closing-the-day-reflection"))
+        #expect(!prompt.contains("Why it helps"))
+        #expect(prompt.count < 50_000)
     }
 
     @Test func promptWithEmptyTranscriptStillBuilds() {

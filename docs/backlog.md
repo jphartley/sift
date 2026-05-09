@@ -1,8 +1,12 @@
-# Feature Status
+# Backlog
 
-Tracking PRD and supplement requirements against the voice check-in MVP.
+Tracking voice check-in MVP status, product backlog items, and future follow-up work.
 
-| Task | Priority | Status |
+## MVP Feature Status
+
+PRD and supplement requirements against the voice check-in MVP.
+
+| Item | Priority | Status |
 |---|---|---|
 | Voice recording + on-device transcription (WhisperKit) | Highest | Done |
 | AI practice suggestions with Gemini rationale + relevance scores | Highest | Done |
@@ -32,3 +36,10 @@ Tracking PRD and supplement requirements against the voice check-in MVP.
 - **Partially Done** — Some aspect exists but the full requirement is incomplete
 - **To Do** — Planned but not yet started
 - **Out of Scope** — Deliberately excluded from the current MVP phase
+
+## Future Backlog Items
+
+| Item | Priority | Notes |
+|---|---|---|
+| Local practice pre-filtering before Gemini recommendation requests | Medium | The first compact-catalog pass reduced the Gemini practice-library prompt section from 56,265 chars (~14,066 estimated tokens) to 43,348 chars (~10,837 estimated tokens), a 12,917 char / ~3,229 token savings, or about 23%. This is useful but not a major reduction because Gemini still sees all 140 practices. The larger win is filtering locally to a smaller candidate set, for example 30-50 practices, before the Gemini call. |
+| Aggregated user history context for recommendations | Medium | Replace raw recent-history excerpts with a higher-level summary of patterns, helpful practices, repeated stressors, and user preferences once enough history exists. |

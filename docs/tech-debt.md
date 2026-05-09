@@ -1,18 +1,6 @@
 # Technical Debt
 
-Working list of refactor and maintenance areas that are worth addressing after the voice check-in MVP stabilizes. This is intentionally separate from `feature-status.md`: feature status tracks product scope, while this file tracks code health and architecture pressure.
-
-## High Priority
-
-### Bound recommendation history
-
-The recommendation flow still sends all prior session history to Gemini. That is okay for a tiny local dataset, but it will become a cost, latency, and privacy problem as real usage grows.
-
-Suggested direction:
-- Add a history policy with a clear max count or token budget.
-- Prefer recent sessions plus prior helpful/unhelpful attempts.
-- Introduce summaries before full conversational memory work.
-- Add tests proving the history passed to the recommender is bounded.
+Working list of refactor and maintenance areas that are worth addressing after the voice check-in MVP stabilizes. This is intentionally separate from `backlog.md`: backlog tracks product scope and future product follow-up work, while this file tracks code health and architecture pressure.
 
 ## Medium Priority
 

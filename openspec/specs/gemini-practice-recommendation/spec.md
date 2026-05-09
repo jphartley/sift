@@ -3,7 +3,7 @@ Define how Gemini analyzes check-in transcripts, routes between models, handles 
 ## Requirements
 ### Requirement: System uses Gemini to recommend practices
 
-The system SHALL use Google Gemini to analyze the user's voice check-in transcript and recommend 2–3 wellness practices from the curated library. The system SHALL construct a prompt containing the full transcript, all prior session history with practice attempts, and the complete practice library. Each practice entry in the prompt SHALL include richer recommendation metadata including id, name, category, duration, intensity, labels, summary, best-fit situations, and why-it-helps explanation. The system SHALL use `gemini-3-flash-preview` as the default model.
+The system SHALL use Google Gemini to analyze the user's voice check-in transcript and recommend 2–3 wellness practices from the curated library. The system SHALL construct a prompt containing the full current transcript, bounded selected prior session history, and a compact representation of the complete practice library. Each practice entry in the prompt SHALL include recommendation-selection metadata including id, name, category, duration, intensity, labels, summary, and best-fit situations. The system SHALL use `gemini-3-flash-preview` as the default model.
 
 #### Scenario: Gemini returns recommendations successfully
 
@@ -14,7 +14,7 @@ The system SHALL use Google Gemini to analyze the user's voice check-in transcri
 #### Scenario: No prior sessions exist
 
 - **WHEN** the user has no prior sessions in history
-- **THEN** the system SHALL still send a valid prompt containing only the current transcript and practice library
+- **THEN** the system SHALL still send a valid prompt containing only the current transcript and compact complete practice library
 - **THEN** the system SHALL return recommendations based solely on the current transcript
 
 ### Requirement: System routes between Flash and Pro models based on confidence and server health
@@ -90,19 +90,26 @@ The system SHALL detect Gemini API errors after both Flash and Pro have been att
 - **WHEN** Gemini returns a response that cannot be parsed into the expected structured output schema
 - **THEN** the system SHALL treat this as a failure and display the error state with retry button
 
-### Requirement: Gemini prompt includes full user history
+### Requirement: Gemini prompt includes bounded smart user history
 
-The system SHALL include all prior sessions in the Gemini prompt. Each session SHALL include the full transcript text, the practice name attempted (if any), and the helpfulness rating (true, false, or nil).
+The system SHALL include a bounded selected set of prior sessions in the Gemini prompt. The selected set SHALL include recent sessions plus older sessions with helpful practice attempts when available. Each included session SHALL include the full transcript text, the practice name attempted when present, and the helpfulness rating when present. The system SHALL NOT include unlimited prior sessions in a recommendation prompt.
 
-#### Scenario: User has multiple prior sessions
+#### Scenario: User has fewer sessions than the history limit
 
-- **WHEN** the user has 5 prior sessions with transcripts, practice attempts, and helpfulness ratings
-- **THEN** the system SHALL include all 5 sessions in the Gemini prompt
-- **THEN** each session SHALL include its full transcript, practice name, and helpfulness rating
+- **WHEN** the user has fewer prior sessions than the configured recommendation history limit
+- **THEN** the system SHALL include those prior sessions in the Gemini prompt
+- **THEN** each included session SHALL include its full transcript, practice name when present, and helpfulness rating when present
+
+#### Scenario: User has more sessions than the history limit
+
+- **WHEN** the user has more prior sessions than the configured recommendation history limit
+- **THEN** the system SHALL include a bounded selected set of sessions rather than all prior sessions
+- **THEN** the selected set SHALL include recent sessions
+- **THEN** the selected set SHALL include older helpful practice attempts when available
 
 #### Scenario: User has prior sessions with no practice attempted
 
-- **WHEN** a prior session has no associated practice attempts (user skipped suggestions)
+- **WHEN** a selected prior session has no associated practice attempts
 - **THEN** the system SHALL still include the session transcript in the prompt without practice or helpfulness data
 
 ### Requirement: Gemini service is instantiated and injected at app launch
@@ -196,13 +203,13 @@ The system SHALL preserve the existing Gemini practice recommendation behavior w
 - **WHEN** `Secrets.geminiApiKey` is empty
 - **THEN** the first Gemini recommendation request SHALL fail with the existing missing API key error
 
-### Requirement: Gemini prompt uses enriched practice metadata without guided steps
+### Requirement: Gemini prompt uses compact practice metadata
 
-The system SHALL include enriched metadata useful for recommendation matching while omitting full practice step lists from the Gemini prompt.
+The system SHALL include compact metadata useful for recommendation matching while omitting full practice execution details from the Gemini prompt.
 
-#### Scenario: Prompt includes matching metadata
+#### Scenario: Prompt includes compact matching metadata
 
 - **WHEN** the system builds a Gemini recommendation prompt
-- **THEN** each practice entry SHALL include the practice summary, labels, best-fit situations, why-it-helps explanation, duration, category, and intensity
+- **THEN** each practice entry SHALL include id, name, category, duration, intensity, labels, summary, and best-fit situations
+- **THEN** each practice entry SHALL omit full step lists, avoid-when guidance, keywords, and why-it-helps explanation
 - **THEN** the prompt SHALL remain valid when the user has no prior history
-

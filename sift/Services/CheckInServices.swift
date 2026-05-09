@@ -28,6 +28,10 @@ protocol SessionStore: AnyObject {
 }
 
 final class SwiftDataSessionStore: SessionStore {
+    private static let recommendationHistoryLimit = 20
+    private static let recentRecommendationHistoryLimit = 10
+    private static let helpfulRecommendationHistoryLimit = 10
+
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
@@ -37,8 +41,9 @@ final class SwiftDataSessionStore: SessionStore {
     func recommendationHistory() throws -> [SessionHistoryEntry] {
         let descriptor = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
         let sessions = try modelContext.fetch(descriptor)
+        let selectedSessions = selectRecommendationHistory(from: sessions)
 
-        return sessions.map { session in
+        return selectedSessions.map { session in
             let attempt = session.attempts.first
             return SessionHistoryEntry(
                 timestamp: session.timestamp,
@@ -47,6 +52,27 @@ final class SwiftDataSessionStore: SessionStore {
                 wasHelpful: attempt?.wasHelpful
             )
         }
+    }
+
+    private func selectRecommendationHistory(from sessions: [Session]) -> [Session] {
+        if sessions.count <= Self.recommendationHistoryLimit {
+            return sessions
+        }
+
+        let recent = Array(sessions.prefix(Self.recentRecommendationHistoryLimit))
+        let recentIDs = Set(recent.map(\.id))
+        let helpful = sessions
+            .filter { session in
+                !recentIDs.contains(session.id) && session.attempts.contains { $0.wasHelpful == true }
+            }
+            .prefix(Self.helpfulRecommendationHistoryLimit)
+
+        var seenIDs: Set<UUID> = []
+        return (recent + helpful)
+            .filter { session in
+                seenIDs.insert(session.id).inserted
+            }
+            .sorted { $0.timestamp > $1.timestamp }
     }
 
     func save(_ session: Session) throws {

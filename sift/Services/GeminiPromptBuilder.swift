@@ -11,7 +11,7 @@ struct GeminiPromptBuilder {
         for practice in practices {
             let labels = practice.labels.joined(separator: ", ")
             let bestFor = practice.bestFor.joined(separator: "; ")
-            parts.append("- **\(practice.name)** (id: `\(practice.id)`, \(practice.category), ~\(practice.durationMinutes)m, intensity: \(practice.intensity), labels: \(labels)): \(practice.summary) Best for: \(bestFor). Why it helps: \(practice.whyItHelps)")
+            parts.append("- **\(practice.name)** (id: `\(practice.id)`, category: \(practice.category), ~\(practice.durationMinutes)m, intensity: \(practice.intensity), labels: \(labels)): \(practice.summary) Best for: \(bestFor).")
         }
 
         if !history.isEmpty {
