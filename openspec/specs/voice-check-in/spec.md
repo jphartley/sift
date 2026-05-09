@@ -48,12 +48,13 @@ The system SHALL transcribe recorded audio using WhisperKit on-device. The syste
 
 ### Requirement: System suggests practices after transcription
 
-After a successful transcription, the system SHALL submit the transcript plus user history to Gemini for analysis. The system SHALL display 2–3 practice suggestions based on Gemini's structured response, which includes an overarching rationale and per-practice relevance text. The system SHALL use `gemini-3-flash-preview` by default and escalate to `gemini-3.1-pro-preview` when confidence is below 0.7.
+After a successful transcription, the system SHALL submit the transcript plus user history to Gemini for analysis. The system SHALL display 2-3 practice suggestions based on Gemini's structured response, which includes an overarching rationale and per-practice relevance text. The system SHALL use `gemini-3-flash-preview` by default and escalate to `gemini-3.1-pro-preview` when confidence is below 0.7. Confidence and escalation metadata SHALL remain internal to routing, persistence, debugging, or developer diagnostics and SHALL NOT be shown in the main suggestion UI.
 
 #### Scenario: Gemini returns practice recommendations
 
 - **WHEN** Gemini returns valid practice recommendations
-- **THEN** the system SHALL display up to 3 practices with rationale, relevance text, and confidence data
+- **THEN** the system SHALL display up to 3 practices with human-facing rationale and relevance text
+- **THEN** the system SHALL NOT display confidence data, model names, provider names, or escalation details in the main suggestion UI
 
 #### Scenario: Gemini returns no matching practices
 
@@ -80,12 +81,14 @@ The system SHALL display an analyzing state with a loading indicator after trans
 - **THEN** the system SHALL transition from the analyzing state to the suggesting state
 
 ### Requirement: Check-in flow preserves behavior while using injectable services
+
 The system SHALL preserve the existing voice check-in user flow while `RecordingViewModel` depends on service protocols and a session store rather than concrete service implementations.
 
 #### Scenario: Successful check-in still reaches suggestions
 - **WHEN** recording stops, transcription succeeds, and recommendations are returned
 - **THEN** the system SHALL create a pending session with transcript and transcription duration
 - **THEN** the system SHALL transition through analyzing to suggesting with recommended practices, rationale, escalation state, and relevance text
+- **THEN** escalation state SHALL remain available to internal flow state without being displayed as model-routing copy in the main suggestion UI
 
 #### Scenario: User completes reflection
 - **WHEN** the user selects a practice and saves reflection
@@ -194,4 +197,45 @@ The system SHALL display first-screen orientation in the ready recording state s
 #### Scenario: Check-in flow omits persistent navigation title
 - **WHEN** the user is in the recording check-in flow
 - **THEN** the system SHALL NOT display a persistent "Check In" navigation title above the flow content
+
+### Requirement: Check-in flow presents calm recovery states
+
+The system SHALL present beta-ready recovery states for recoverable check-in failures using plain language, a specific next action, and calm visual treatment.
+
+#### Scenario: Microphone permission recovery opens Settings
+- **WHEN** the user has denied microphone permission
+- **THEN** the system SHALL display a recovery state explaining that microphone access is needed to record a check-in
+- **THEN** the recovery state SHALL provide an "Open Settings" action
+- **THEN** activating "Open Settings" SHALL request opening the app's system Settings page
+- **THEN** the recovery state SHALL provide a way to try microphone permission again after the user returns
+
+#### Scenario: Model loading recovery
+- **WHEN** the WhisperKit model fails to download or load
+- **THEN** the system SHALL display a recovery state explaining that Sift could not prepare speech recognition
+- **THEN** the recovery state SHALL reassure the user that nothing was lost
+- **THEN** the recovery state SHALL provide a retry action for model loading
+
+#### Scenario: Empty speech recovery
+- **WHEN** transcription completes with empty or whitespace-only text
+- **THEN** the system SHALL display a recovery state explaining that the check-in did not come through
+- **THEN** the recovery state SHALL reassure the user that they did not do anything wrong
+- **THEN** the recovery state SHALL provide a "Record again" action that returns the user to the ready recording state
+
+#### Scenario: Analysis failure recovery preserves transcript
+- **WHEN** recommendation analysis fails after a transcript has been created
+- **THEN** the system SHALL display a recovery state explaining that suggestions did not load
+- **THEN** the recovery state SHALL state that the check-in text is still available
+- **THEN** the recovery state SHALL provide a retry action for suggestions
+- **THEN** retrying suggestions SHALL reuse the existing transcript instead of asking the user to record again
+
+#### Scenario: Empty suggestion recovery
+- **WHEN** analysis completes but no usable practices can be shown
+- **THEN** the system SHALL display a recovery state explaining that Sift could not find practices to show this time
+- **THEN** the recovery state SHALL avoid implying that the user checked in incorrectly
+- **THEN** the recovery state SHALL provide a retry action for suggestions
+
+#### Scenario: Recovery states remain calm
+- **WHEN** the system displays a recoverable check-in failure
+- **THEN** the recovery state SHALL avoid raw technical error text as the primary user-facing message
+- **THEN** the recovery state SHALL avoid visually alarming red treatment for non-emergency failures
 

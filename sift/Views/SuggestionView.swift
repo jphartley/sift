@@ -1,5 +1,25 @@
 import SwiftUI
 
+enum SuggestionViewContent {
+    static let transcriptHeading = "You shared"
+    static let rationaleHeading = "Why these might fit"
+    static let practiceHeading = "Try one of these"
+    static let relevanceHeading = "Why this might help"
+    static let doneButtonTitle = "Done"
+    static let tryButtonTitle = "Try This"
+
+    static var mainUserFacingCopy: [String] {
+        [
+            transcriptHeading,
+            rationaleHeading,
+            practiceHeading,
+            doneButtonTitle,
+            tryButtonTitle,
+            relevanceHeading
+        ]
+    }
+}
+
 struct SuggestionView: View {
     let transcript: String
     let practices: [Practice]
@@ -10,14 +30,13 @@ struct SuggestionView: View {
     let onSelect: (Practice) -> Void
     let onSkip: () -> Void
 
-    @State private var showEscalatedToast = false
     @State private var expandedID: String? = nil
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("You shared")
+                    Text(SuggestionViewContent.transcriptHeading)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(transcript)
@@ -29,7 +48,7 @@ struct SuggestionView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Analysis")
+                    Text(SuggestionViewContent.rationaleHeading)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(rationale)
@@ -40,42 +59,20 @@ struct SuggestionView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
-                Text("Try one of these")
+                Text(SuggestionViewContent.practiceHeading)
                     .font(.headline)
 
                 ForEach(practices) { practice in
                     practiceCard(practice)
                 }
 
-                Button("Done") {
+                Button(SuggestionViewContent.doneButtonTitle) {
                     onSkip()
                 }
                 .buttonStyle(.bordered)
                 .frame(maxWidth: .infinity)
             }
             .padding()
-        }
-        .onAppear {
-            if wasEscalated {
-                showEscalatedToast = true
-                Task {
-                    try? await Task.sleep(for: .seconds(3))
-                    showEscalatedToast = false
-                }
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if showEscalatedToast {
-                Text("Escalated to Pro model")
-                    .font(.caption)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.orange)
-                    .clipShape(Capsule())
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
         }
     }
 
@@ -122,17 +119,22 @@ struct SuggestionView: View {
                     .lineLimit(isExpanded ? nil : 2)
 
                 if isExpanded, let relevance = relevanceByID[practice.id] {
-                    Text(relevance)
-                        .font(.caption)
-                        .foregroundStyle(.indigo)
-                        .padding(.top, 4)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(SuggestionViewContent.relevanceHeading)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(relevance)
+                            .font(.caption)
+                            .foregroundStyle(.indigo)
+                    }
+                    .padding(.top, 4)
                 }
 
                 if isExpanded {
                     Button {
                         onSelect(practice)
                     } label: {
-                        Text("Try This")
+                        Text(SuggestionViewContent.tryButtonTitle)
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)

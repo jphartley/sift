@@ -72,7 +72,7 @@ sift/
   Views/
     RecordingScreen.swift       — record button, audio level meter, delegates to flow views, tears down in-flight check-in work on disappearance
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
-    SuggestionView.swift        — transcript display + Gemini rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
+    SuggestionView.swift        — transcript display + human-facing recommendation rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
     PracticeDetailView.swift    — selected practice page with rationale, summary, "One way to practice" steps, gentle safety note, and sticky "I did this" action
     ReflectionView.swift        — helpfulness thumbs up/down → optional notes → save/skip
     HistoryScreen.swift         — SwiftData @Query list of past sessions, swipe to delete via HistoryViewModel
@@ -94,6 +94,8 @@ siftTests/
       GeminiPromptBuilderTests.swift       — prompt construction
       GeminiRecommendationParserTests.swift — structured response parsing and validation
       GeminiRecommendationRouterTests.swift — Flash/Pro routing + retryable error detection
+    Views/
+      SuggestionViewContentTests.swift      — suggestion explanation copy and hidden model-routing details
 siftUITests/
     siftUITests.swift                      — app launch + tab navigation smoke test
 ```

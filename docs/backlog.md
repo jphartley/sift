@@ -15,9 +15,9 @@ Audience assumptions:
 
 | Item | Priority | Status | Notes |
 |---|---|---|---|
+| Calm recovery states | P1 | Done | Added calm recovery copy and actions for microphone permission denial with Open Settings, model loading failure, empty speech, analysis/network/API failure, empty suggestions, and save failure. |
 | First-time prompt examples | P1 | To Do | Add example check-in prompts such as feeling tense after a conversation, replaying something from the day, or wanting one small practice before bed. |
 | Human-facing suggestion explainability | P1 | To Do | Keep "Why this was suggested" while making rationale feel like coaching instead of model output; hide implementation details such as model escalation from beta users unless needed for debugging. |
-| Calm recovery states | P1 | To Do | Improve copy and actions for microphone permission denial, model download/loading, empty speech, analysis failure, and network/API failure. |
 | Internal TestFlight operations | P2 | To Do | Prepare build/version numbers, signing/archive/upload, internal tester group, TestFlight "What to Test", feedback email, full test run, and a quick device smoke test. |
 
 ## MVP Feature Status
