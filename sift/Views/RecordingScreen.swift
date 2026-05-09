@@ -1,6 +1,20 @@
 import SwiftUI
 import SwiftData
 
+public enum RecordingScreenOrientation {
+    public static let heading = "Take a moment to arrive"
+    public static let reassurance = "There is no right or wrong way to do this. Speak for about a minute about what feels most alive right now: what happened, how it feels, or what kind of support you want."
+    public static let nextStep = "Sift will transcribe your voice on device, reflect back what it heard, and suggest a few practices you can choose from."
+    public static let returningHeading = "Check in again"
+    public static let returningGuidance = "Record another short voice note about what feels most alive right now. A minute is enough."
+    public static let starterHeading = "You might start with:"
+    public static let starterPrompts = [
+        "Right now I notice...",
+        "What feels hard is...",
+        "What I need is..."
+    ]
+}
+
 struct RecordingScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(TranscriptionService.self) private var transcriptionService
@@ -63,8 +77,7 @@ struct RecordingScreen: View {
                     }
                 }
             }
-            .navigationTitle("Check In")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .task {
             viewModel.configure(
@@ -108,51 +121,113 @@ struct RecordingScreen: View {
     }
 
     private var readyView: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: 28) {
+                if viewModel.lastTranscript.isEmpty {
+                    orientationView
+                } else {
+                    returningOrientationView
+                }
 
-            if !viewModel.lastTranscript.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Last Transcript")
+                if !viewModel.lastTranscript.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Last Transcript")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(viewModel.lastTranscript)
+                            .font(.body)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+
+                Button {
+                    viewModel.startRecording()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(.red)
+                            .frame(width: 88, height: 88)
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 34))
+                            .foregroundStyle(.white)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Text("Tap to record")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+
+                if viewModel.lastTranscript.isEmpty {
+                    starterPromptsView
+                }
+
+                if !viewModel.lastTranscript.isEmpty {
+                    Text("Swipe to History tab to review past check-ins")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(viewModel.lastTranscript)
-                        .font(.body)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .padding(.horizontal)
-            }
-
-            Button {
-                viewModel.startRecording()
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(.red)
-                        .frame(width: 80, height: 80)
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 8)
                 }
             }
-            .buttonStyle(.plain)
+            .padding()
+            .frame(maxWidth: .infinity)
+        }
+    }
 
-            Text("Tap to record")
-                .font(.headline)
+    private var returningOrientationView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(RecordingScreenOrientation.returningHeading)
+                .font(.title3)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(RecordingScreenOrientation.returningGuidance)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var orientationView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(RecordingScreenOrientation.heading)
+                .font(.title2)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(RecordingScreenOrientation.reassurance)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(RecordingScreenOrientation.nextStep)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var starterPromptsView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(RecordingScreenOrientation.starterHeading)
+                .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Spacer()
-
-            if !viewModel.lastTranscript.isEmpty {
-                Text("Swipe to History tab to review past check-ins")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .padding(.bottom)
+            ForEach(RecordingScreenOrientation.starterPrompts, id: \.self) { prompt in
+                Text(prompt)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var recordingView: some View {
