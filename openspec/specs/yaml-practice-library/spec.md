@@ -53,13 +53,12 @@ The system SHALL include unit tests that load the bundled `practices.yaml` and a
 - **WHEN** a developer introduces a syntax error in `practices.yaml`
 - **THEN** the validation test SHALL fail with a decoding error
 
-### Requirement: Practice library includes enriched initial categories
+### Requirement: Practice library includes enriched selected categories
 
-The bundled practice library SHALL include enriched practices for the first completed categories from the planning process: Breathwork, Meditation, Grounding, and Movement.
+The bundled practice library SHALL include enriched practices for all selected categories from the practice library planning process: Breathwork, Meditation, Grounding, Movement, Journaling, Emotional Processing, Social Connection, Nature, Creative Expression, Practical Care, Sleep & Wind-Down, Self-Compassion, Values & Intention, and Spiritual / Contemplative.
 
-#### Scenario: Completed category practices are bundled
+#### Scenario: Selected category practices are bundled
 
 - **WHEN** the bundled YAML practice library is decoded
-- **THEN** the resulting practice list SHALL include practices whose categories include Breathwork, Meditation, Grounding, and Movement
+- **THEN** the resulting practice list SHALL include practices across all selected practice categories
 - **THEN** those practices SHALL use the richer executable schema rather than the legacy description field
-

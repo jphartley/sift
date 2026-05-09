@@ -7,7 +7,7 @@ Tracking PRD and supplement requirements against the voice check-in MVP.
 | Voice recording + on-device transcription (WhisperKit) | Highest | Done |
 | AI practice suggestions with Gemini rationale + relevance scores | Highest | Done |
 | Two-tier Flash/Pro model routing with confidence thresholds | Highest | Done |
-| Practice library rich schema + initial expanded categories | Highest | Partially Done |
+| Practice library rich schema + expanded category library | Highest | Done |
 | Practice detail page with steps and completion action | Highest | Done |
 | Practice reflection (helpfulness + optional notes) | Highest | Done |
 | Session + PracticeAttempt history persisted via SwiftData | Highest | Done |

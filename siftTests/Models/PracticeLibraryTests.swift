@@ -187,6 +187,31 @@ struct PracticeLibraryTests {
         }
         let yamlString = try String(contentsOf: url, encoding: .utf8)
         let practices = try Practice.load(from: yamlString)
-        #expect(practices.count >= 10)
+        #expect(practices.count == 140)
+    }
+
+    @Test func bundledYAMLIncludesExpandedCategoryCoverage() throws {
+        guard let url = Bundle.main.url(forResource: "practices", withExtension: "yaml") else {
+            return
+        }
+        let yamlString = try String(contentsOf: url, encoding: .utf8)
+        let practices = try Practice.load(from: yamlString)
+        let categoryCounts = Dictionary(grouping: practices, by: \.category)
+            .mapValues(\.count)
+
+        #expect(categoryCounts["Breathwork"] == 14)
+        #expect(categoryCounts["Meditation"] == 12)
+        #expect(categoryCounts["Grounding"] == 6)
+        #expect(categoryCounts["Movement"] == 10)
+        #expect(categoryCounts["Journaling"] == 12)
+        #expect(categoryCounts["Emotional Processing"] == 9)
+        #expect(categoryCounts["Social Connection"] == 12)
+        #expect(categoryCounts["Nature"] == 10)
+        #expect(categoryCounts["Creative Expression"] == 11)
+        #expect(categoryCounts["Practical Care"] == 10)
+        #expect(categoryCounts["Sleep & Wind-Down"] == 12)
+        #expect(categoryCounts["Self-Compassion"] == 7)
+        #expect(categoryCounts["Values & Intention"] == 7)
+        #expect(categoryCounts["Spiritual / Contemplative"] == 8)
     }
 }
