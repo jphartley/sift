@@ -81,10 +81,7 @@ final class LiveGeminiModelRequester: GeminiModelRequesting {
         } catch let error as GenerateContentError {
             print("[GeminiService] GenerateContentError for \(modelName): \(error)")
             switch error {
-            case .responseStoppedEarly(let reason, let response):
-                if let text = response.text {
-                    print("[GeminiService] Partial response text: \(text)")
-                }
+            case .responseStoppedEarly(let reason, _):
                 throw GeminiError.networkError("Response cut short: \(reason)")
             case .promptBlocked:
                 throw GeminiError.networkError("Content blocked by safety filter")

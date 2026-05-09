@@ -13,6 +13,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("History", systemImage: "list.bullet.rectangle")
                 }
+
+            PrivacyScreen()
+                .tabItem {
+                    Label(PrivacyContent.tabLabel, systemImage: "shield")
+                }
         }
     }
 }
