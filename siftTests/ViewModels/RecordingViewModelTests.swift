@@ -24,6 +24,12 @@ struct RecordingViewModelTests {
         return (viewModel, audioRecorder, transcriptionClient, recommendationClient, sessionStore)
     }
 
+    private func startRecording(_ viewModel: RecordingViewModel) async {
+        if let task = viewModel.startRecording() {
+            await task.value
+        }
+    }
+
     @Test func setupRequestsPermissionAndBecomesReady() async {
         let (viewModel, audioRecorder, _, _, _) = makeViewModel()
 
@@ -54,6 +60,54 @@ struct RecordingViewModelTests {
         #expect(viewModel.state == .ready)
     }
 
+    @Test func startRecordingImmediatelyShowsPreparingState() async {
+        let audioRecorder = FakeAudioRecorder(permissionDelay: .milliseconds(50))
+        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        viewModel.state = .ready
+
+        let task = viewModel.startRecording()
+
+        #expect(viewModel.state == .preparingToRecord)
+
+        await task?.value
+
+        #expect(viewModel.state == .recording)
+        #expect(audioRecorder.startRecordingCount == 1)
+    }
+
+    @Test func repeatedStartRecordingWhilePreparingDoesNotOverlapStartup() async {
+        let audioRecorder = FakeAudioRecorder(permissionDelay: .milliseconds(50))
+        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        viewModel.state = .ready
+
+        let firstTask = viewModel.startRecording()
+        let secondTask = viewModel.startRecording()
+
+        #expect(secondTask == nil)
+        #expect(viewModel.state == .preparingToRecord)
+
+        await firstTask?.value
+
+        #expect(audioRecorder.permissionRequestCount == 1)
+        #expect(audioRecorder.startRecordingCount == 1)
+        #expect(viewModel.state == .recording)
+    }
+
+    @Test func permissionDeniedDuringRecordingStartupShowsRecovery() async {
+        let audioRecorder = FakeAudioRecorder(permissionGranted: false, permissionDelay: .milliseconds(10))
+        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        viewModel.state = .ready
+
+        let task = viewModel.startRecording()
+
+        #expect(viewModel.state == .preparingToRecord)
+
+        await task?.value
+
+        #expect(viewModel.state == .recovery(.microphonePermissionDenied))
+        #expect(audioRecorder.startRecordingCount == 0)
+    }
+
     @Test func stopRecordingTranscribesAndShowsSuggestions() async {
         let transcriptionClient = FakeTranscriptionClient(text: "I feel anxious", durationMs: 123)
         let recommendationClient = FakeRecommendationClient(result: RecommendationResult(
@@ -70,7 +124,7 @@ struct RecordingViewModelTests {
         viewModel.state = .ready
         viewModel.recordingDuration = 4.2
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         if let task = viewModel.stopRecording() {
             await task.value
         }
@@ -102,7 +156,7 @@ struct RecordingViewModelTests {
         let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         if let task = viewModel.stopRecording() {
             await task.value
         }
@@ -126,7 +180,7 @@ struct RecordingViewModelTests {
         )
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         if let task = viewModel.stopRecording() {
             await task.value
         }
@@ -178,7 +232,7 @@ struct RecordingViewModelTests {
         let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         if let task = viewModel.stopRecording() {
             await task.value
         }
@@ -204,7 +258,7 @@ struct RecordingViewModelTests {
         let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         try? await Task.sleep(for: .milliseconds(70))
         #expect(viewModel.recordingDuration == 4.2)
 
@@ -282,7 +336,7 @@ struct RecordingViewModelTests {
         let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         try? await Task.sleep(for: .milliseconds(70))
         #expect(viewModel.recordingDuration == 4.2)
 
@@ -469,7 +523,7 @@ struct RecordingViewModelTests {
         )
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         if let task = viewModel.stopRecording() {
             await task.value
         }
@@ -491,7 +545,7 @@ struct RecordingViewModelTests {
         let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         if let task = viewModel.stopRecording() {
             await task.value
         }
@@ -524,7 +578,7 @@ struct RecordingViewModelTests {
         let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
         viewModel.state = .ready
 
-        viewModel.startRecording()
+        await startRecording(viewModel)
         if let task = viewModel.stopRecording() {
             await task.value
         }
@@ -605,9 +659,11 @@ private final class FakeAudioRecorder: AudioRecording {
     var didRequestPermission = false
     var permissionRequestCount = 0
     var didStartRecording = false
+    var startRecordingCount = 0
     var didStopRecording = false
 
     private let permissionGranted: Bool
+    private let permissionDelay: Duration?
     private let recordingURL: URL
     private let startError: Error?
     private let keepsRecordingAfterStop: Bool
@@ -616,11 +672,13 @@ private final class FakeAudioRecorder: AudioRecording {
         permissionGranted: Bool = true,
         recordingDuration: TimeInterval = 4.2,
         audioLevel: Float = -24,
+        permissionDelay: Duration? = nil,
         recordingURL: URL = URL(fileURLWithPath: "/tmp/fake-recording.wav"),
         startError: Error? = nil,
         keepsRecordingAfterStop: Bool = false
     ) {
         self.permissionGranted = permissionGranted
+        self.permissionDelay = permissionDelay
         self.recordingDuration = recordingDuration
         self.audioLevel = audioLevel
         self.recordingURL = recordingURL
@@ -631,12 +689,16 @@ private final class FakeAudioRecorder: AudioRecording {
     func requestPermission() async -> Bool {
         didRequestPermission = true
         permissionRequestCount += 1
+        if let permissionDelay {
+            try? await Task.sleep(for: permissionDelay)
+        }
         return permissionGranted
     }
 
     func startRecording() throws -> URL {
-        if let startError { throw startError }
         didStartRecording = true
+        startRecordingCount += 1
+        if let startError { throw startError }
         isRecording = true
         return recordingURL
     }

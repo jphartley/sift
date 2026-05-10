@@ -16,6 +16,66 @@ public enum RecordingScreenOrientation {
     ]
 }
 
+enum RecordingScreenSetup {
+    enum Progress: Equatable {
+        case determinate(Double)
+        case indeterminate
+    }
+
+    struct Presentation: Equatable {
+        let title: String
+        let message: String
+        let status: String
+        let note: String
+        let progress: Progress
+    }
+
+    static func presentation(for modelState: ModelState) -> Presentation {
+        let title = "Getting Sift ready"
+        let message = "Sift is preparing on-device speech recognition so your voice can be transcribed on your phone."
+        let note = "First setup can take a little while. After that, opening Sift should be faster."
+
+        switch modelState {
+        case .downloading(let progress):
+            return Presentation(
+                title: title,
+                message: message,
+                status: "Getting on-device speech recognition ready...",
+                note: note,
+                progress: .determinate(progress)
+            )
+        case .loading:
+            return Presentation(
+                title: title,
+                message: message,
+                status: "Preparing speech recognition on device...",
+                note: note,
+                progress: .indeterminate
+            )
+        case .notLoaded:
+            return Presentation(
+                title: title,
+                message: message,
+                status: "Starting setup...",
+                note: note,
+                progress: .indeterminate
+            )
+        case .ready, .failed:
+            return Presentation(
+                title: title,
+                message: message,
+                status: "",
+                note: note,
+                progress: .indeterminate
+            )
+        }
+    }
+}
+
+enum RecordingScreenRecordingStartup {
+    static let status = "Getting microphone ready..."
+}
+
 enum RecordingScreenSettings {
     static let appSettingsURL = URL(string: UIApplication.openSettingsURLString)
 }
@@ -42,6 +102,8 @@ struct RecordingScreen: View {
                     switch viewModel.state {
                     case .idle, .loadingModel, .ready:
                         readyView
+                    case .preparingToRecord:
+                        preparingToRecordView
                     case .recording:
                         recordingView
                     case .transcribing:
@@ -109,22 +171,42 @@ struct RecordingScreen: View {
     }
 
     private var loadingView: some View {
-        VStack(spacing: 16) {
-            if case .downloading(let progress) = transcriptionService.modelState {
+        let presentation = RecordingScreenSetup.presentation(for: transcriptionService.modelState)
+
+        return VStack(spacing: 18) {
+            VStack(spacing: 8) {
+                Text(presentation.title)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+
+                Text(presentation.message)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            switch presentation.progress {
+            case .determinate(let progress):
                 ProgressView(value: progress)
                     .progressViewStyle(.linear)
-                    .frame(width: 200)
-                Text("Downloading speech model...")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
+                    .frame(maxWidth: 220)
+            case .indeterminate:
                 ProgressView()
                     .scaleEffect(1.2)
-                Text("Preparing speech model...")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
+
+            Text(presentation.status)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Text(presentation.note)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
         }
+        .padding()
     }
 
     private var readyView: some View {
@@ -284,6 +366,18 @@ struct RecordingScreen: View {
 
             Spacer()
         }
+    }
+
+    private var preparingToRecordView: some View {
+        VStack(spacing: 18) {
+            ProgressView()
+                .scaleEffect(1.2)
+
+            Text(RecordingScreenRecordingStartup.status)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
     }
 
     private func barOpacity(for index: Int) -> Double {

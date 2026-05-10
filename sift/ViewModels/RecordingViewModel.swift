@@ -4,6 +4,7 @@ enum RecordingState: Equatable {
     case idle
     case loadingModel
     case ready
+    case preparingToRecord
     case recording
     case transcribing
     case analyzing
@@ -26,6 +27,7 @@ final class RecordingViewModel {
     private var recommendationClient: RecommendationClient?
     private var sessionStore: SessionStore?
     private var meterPollingTask: Task<Void, Never>?
+    private var recordingStartupTask: Task<Void, Never>?
     private var analysisTask: Task<Void, Never>?
     private var analysisTaskID: UUID?
     private var currentRecordingURL: URL?
@@ -59,18 +61,42 @@ final class RecordingViewModel {
         state = .ready
     }
 
-    func startRecording() {
-        guard case .ready = state else { return }
+    @discardableResult
+    func startRecording() -> Task<Void, Never>? {
+        guard case .ready = state else { return nil }
         cancelMeterPolling()
+        state = .preparingToRecord
 
-        do {
-            currentRecordingURL = try audioRecorder.startRecording()
-            state = .recording
-            startMeterPolling()
-        } catch {
-            cancelMeterPolling()
-            state = .recovery(.emptySpeech)
+        let task = Task { @MainActor in
+            let hasPermission = await audioRecorder.requestPermission()
+            guard !Task.isCancelled else {
+                recordingStartupTask = nil
+                return
+            }
+            guard case .preparingToRecord = state else {
+                recordingStartupTask = nil
+                return
+            }
+            guard hasPermission else {
+                cancelMeterPolling()
+                recordingStartupTask = nil
+                state = .recovery(.microphonePermissionDenied)
+                return
+            }
+
+            do {
+                currentRecordingURL = try audioRecorder.startRecording()
+                state = .recording
+                startMeterPolling()
+            } catch {
+                cancelMeterPolling()
+                state = .recovery(.emptySpeech)
+            }
+
+            recordingStartupTask = nil
         }
+        recordingStartupTask = task
+        return task
     }
 
     @discardableResult
@@ -228,6 +254,8 @@ final class RecordingViewModel {
         if audioRecorder.isRecording {
             audioRecorder.stopRecording()
         }
+        recordingStartupTask?.cancel()
+        recordingStartupTask = nil
         cancelMeterPolling()
         cancelAnalysisTask()
     }

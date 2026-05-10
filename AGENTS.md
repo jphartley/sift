@@ -67,10 +67,10 @@ sift/
     Secrets.swift               — Checked-in safe Gemini API key fallback; reads bundled ignored GeminiAPIKey.local at runtime
     GeminiAPIKey.local.example  — Template for ignored local Gemini API key text file
   ViewModels/
-    RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/recording/transcribing/analyzing/suggesting/practicing/reflecting/error)
+    RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/preparingToRecord/recording/transcribing/analyzing/suggesting/practicing/reflecting/error)
     HistoryViewModel.swift      — history deletion state owner, routes deletes through SessionStore and surfaces delete failures
   Views/
-    RecordingScreen.swift       — record button, audio level meter, delegates to flow views, tears down in-flight check-in work on disappearance
+    RecordingScreen.swift       — first-time setup copy, record button, audio level meter, delegates to flow views, tears down in-flight check-in work on disappearance
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
     SuggestionView.swift        — transcript display + human-facing recommendation rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
     PracticeDetailView.swift    — selected practice page with rationale, summary, "One way to practice" steps, gentle safety note, and sticky "I did this" action
@@ -79,7 +79,7 @@ sift/
     SessionDetailView.swift     — full transcript + practice attempts with helpfulness ratings + Gemini metadata
 siftTests/
     TestHelpers.swift                      — in-memory SwiftData container factory
-    ProjectMetadataTests.swift             — Xcode project metadata checks for beta-facing app name, microphone permission copy, and version values
+    ProjectMetadataTests.swift             — Xcode project metadata and startup checks for beta-facing app name, microphone permission copy, version values, and storage preparation
     Models/
       PracticeLibraryTests.swift           — YAML decoding + library integrity
       SessionTests.swift                   — model defaults + Gemini fields
