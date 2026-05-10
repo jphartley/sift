@@ -7,9 +7,9 @@ TBD - created by archiving change prepare-testflight-beta-metadata. Update Purpo
 
 The app target SHALL expose user-facing metadata suitable for an external TestFlight beta build.
 
-#### Scenario: Installed app name is Sift
+#### Scenario: Installed app name is Sift and Reflect
 - **WHEN** the app is installed from a beta build
-- **THEN** the displayed app name SHALL be "Sift"
+- **THEN** the displayed app name SHALL be "Sift and Reflect"
 
 #### Scenario: Microphone permission prompt matches check-in purpose
 - **WHEN** iOS asks the user for microphone permission
@@ -41,4 +41,3 @@ The beta readiness backlog SHALL distinguish codebase preparation from manual Ap
 - **WHEN** the release operator follows the beta operations checklist
 - **THEN** the checklist SHALL include preparing beta review notes that explain the reviewer path
 - **THEN** the checklist SHALL include the wellness boundary that Sift is not therapy, medical advice, diagnosis, or crisis support
-

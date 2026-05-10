@@ -2,10 +2,10 @@ import Foundation
 import Testing
 
 struct ProjectMetadataTests {
-    @Test func appDisplayNameIsSift() throws {
+    @Test func appDisplayNameIsSiftAndReflect() throws {
         let project = try projectFileText()
 
-        #expect(project.contains("INFOPLIST_KEY_CFBundleDisplayName = Sift;"))
+        #expect(project.contains("INFOPLIST_KEY_CFBundleDisplayName = \"Sift and Reflect\";"))
     }
 
     @Test func microphoneUsageDescriptionMatchesVoiceCheckInPurpose() throws {

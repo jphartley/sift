@@ -422,7 +422,7 @@ The system SHALL have automated coverage or static project checks for app metada
 
 #### Scenario: Display name metadata is covered
 - **WHEN** automated tests or static checks inspect app target metadata
-- **THEN** they SHALL verify that the app display name is "Sift"
+- **THEN** they SHALL verify that the app display name is "Sift and Reflect"
 
 #### Scenario: Microphone usage description metadata is covered
 - **WHEN** automated tests or static checks inspect app target metadata
