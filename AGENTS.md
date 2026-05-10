@@ -79,6 +79,7 @@ sift/
     SessionDetailView.swift     — full transcript + practice attempts with helpfulness ratings + Gemini metadata
 siftTests/
     TestHelpers.swift                      — in-memory SwiftData container factory
+    ProjectMetadataTests.swift             — Xcode project metadata checks for beta-facing app name, microphone permission copy, and version values
     Models/
       PracticeLibraryTests.swift           — YAML decoding + library integrity
       SessionTests.swift                   — model defaults + Gemini fields
