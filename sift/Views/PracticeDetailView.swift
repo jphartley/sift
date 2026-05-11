@@ -12,93 +12,123 @@ struct PracticeDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                Button("Back") {
+            VStack(alignment: .leading, spacing: SiftSpace.sectGap) {
+                Button {
                     onBack()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Back")
+                            .font(SiftFont.body)
+                    }
+                    .foregroundStyle(SiftColor.muted)
                 }
-                .font(.subheadline)
+                .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(practice.name)
-                        .font(.title2)
-                        .fontWeight(.semibold)
+                    Text("\(practice.category.uppercased()) · ~\(practice.durationMinutes) MIN")
+                        .font(SiftFont.eyebrow)
+                        .tracking(1.2)
+                        .foregroundStyle(SiftColor.quiet)
 
-                    HStack(spacing: 8) {
-                        Text(practice.category)
-                        Text("~\(practice.durationMinutes)m")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    Text(practice.name)
+                        .font(SiftFont.display)
+                        .foregroundStyle(SiftColor.ink)
+
+                    Text(practice.summary)
+                        .font(SiftFont.body)
+                        .foregroundStyle(SiftColor.muted)
+                        .lineSpacing(4)
                 }
 
                 if !relevance.isEmpty {
-                    section("Why this was suggested") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("WHY THIS MIGHT HELP")
+                            .font(SiftFont.eyebrow)
+                            .tracking(1.2)
+                            .foregroundStyle(SiftColor.quiet)
                         Text(relevance)
-                            .font(.body)
-                            .foregroundStyle(.indigo)
+                            .font(SiftFont.body)
+                            .foregroundStyle(SiftColor.muted)
+                            .lineSpacing(4)
                     }
                 }
 
-                section("What it is") {
-                    Text(practice.summary)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                }
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("ONE WAY TO PRACTICE")
+                        .font(SiftFont.eyebrow)
+                        .tracking(1.2)
+                        .foregroundStyle(SiftColor.quiet)
+                        .padding(.bottom, 12)
 
-                section("One way to practice") {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(practice.steps.enumerated()), id: \.offset) { index, step in
-                            HStack(alignment: .top, spacing: 10) {
-                                Text("\(index + 1).")
-                                    .font(.body.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 28, alignment: .trailing)
+                            HStack(alignment: .top, spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(SiftColor.surfaceAlt)
+                                        .frame(width: 24, height: 24)
+                                    Text("\(index + 1)")
+                                        .font(SiftFont.heading)
+                                        .foregroundStyle(SiftColor.accentInk)
+                                }
 
                                 Text(step)
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
+                                    .font(SiftFont.body)
+                                    .foregroundStyle(SiftColor.ink)
+                                    .lineSpacing(4)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            if index < practice.steps.count - 1 {
+                                Spacer().frame(height: 12)
                             }
                         }
                     }
+                    .padding(SiftSpace.cardPad)
+                    .background(SiftColor.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: SiftRadius.card))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: SiftRadius.card)
+                            .strokeBorder(SiftColor.line, lineWidth: 1)
+                    )
+                    .cardShadow()
                 }
 
-                section("Why it helps") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("WHY IT HELPS")
+                        .font(SiftFont.eyebrow)
+                        .tracking(1.2)
+                        .foregroundStyle(SiftColor.quiet)
                     Text(practice.whyItHelps)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                        .font(SiftFont.body.italic())
+                        .foregroundStyle(SiftColor.muted)
+                        .lineSpacing(4)
                 }
 
                 if showsGentleNote {
                     gentleNote
                 }
+
+                Spacer().frame(height: 96)
             }
-            .padding()
-            .padding(.bottom, 96)
+            .padding(.horizontal, SiftSpace.gutter)
+            .padding(.top, SiftSpace.gutter)
         }
         .safeAreaInset(edge: .bottom) {
-            Button {
-                onComplete()
-            } label: {
-                Text("I did this")
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 10) {
+                Button {
+                    onComplete()
+                } label: {
+                    Text("I did this")
+                }
+                .buttonStyle(PrimaryButtonStyle())
             }
-            .buttonStyle(.borderedProminent)
-            .padding()
+            .padding(.horizontal, SiftSpace.gutter)
+            .padding(.vertical, 16)
             .background(.regularMaterial)
         }
-    }
-
-    private func section<Content: View>(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     var gentleNoteHighIntensityText: String {
@@ -111,24 +141,27 @@ struct PracticeDetailView: View {
 
     private var gentleNote: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("A gentle note", systemImage: "info.circle")
-                .font(.headline)
+            Text("A GENTLE NOTE")
+                .font(SiftFont.eyebrow)
+                .tracking(1.2)
+                .foregroundStyle(SiftColor.quiet)
 
             if practice.intensity == "high" {
                 Text(gentleNoteHighIntensityText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.muted)
+                    .lineSpacing(4)
             }
-
             if !practice.avoidWhen.isEmpty {
                 Text(gentleNoteAvoidWhenText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.muted)
+                    .lineSpacing(4)
             }
         }
-        .padding()
+        .padding(SiftSpace.cardPad)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(SiftColor.surfaceAlt)
+        .clipShape(RoundedRectangle(cornerRadius: SiftRadius.card))
     }
 }

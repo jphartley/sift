@@ -4,100 +4,138 @@ struct ReflectionView: View {
     let practiceName: String
     let onSave: (Bool?, String?) -> Void
 
-    @State private var wasHelpful: Bool? = nil
+    @State private var selectedHelpfulness: HelpfulnessOption? = nil
     @State private var notes: String = ""
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(practiceName)
-                    .font(.headline)
+    enum HelpfulnessOption: CaseIterable {
+        case helped, aLittle, notReally
 
-                Divider()
+        var label: String {
+            switch self {
+            case .helped:    return "Helped"
+            case .aLittle:   return "A little"
+            case .notReally: return "Not really"
             }
-
-            reflectionForm
         }
-        .padding()
+
+        var wasHelpful: Bool? {
+            switch self {
+            case .helped:    return true
+            case .aLittle:   return nil
+            case .notReally: return false
+            }
+        }
     }
 
-    private var reflectionForm: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(spacing: 6) {
-                Text("Did it help?")
-                    .font(.title3)
-            }
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: SiftSpace.sectGap) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AFTER")
+                        .font(SiftFont.eyebrow)
+                        .tracking(1.2)
+                        .foregroundStyle(SiftColor.quiet)
+                        .textCase(.uppercase)
 
-            HStack(spacing: 24) {
-                Button {
-                    wasHelpful = true
-                } label: {
-                    VStack(spacing: 8) {
-                        Image(systemName: "hand.thumbsup.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(wasHelpful == true ? .green : .secondary)
-                        Text("Helped")
-                            .font(.headline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        wasHelpful == true
-                            ? Color.green.opacity(0.1)
-                            : Color(.systemGray6)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Text("How did that land?")
+                        .font(SiftFont.title)
+                        .foregroundStyle(SiftColor.ink)
                 }
-                .buttonStyle(.plain)
 
-                Button {
-                    wasHelpful = false
-                } label: {
-                    VStack(spacing: 8) {
-                        Image(systemName: "hand.thumbsdown.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(wasHelpful == false ? .orange : .secondary)
-                        Text("Didn't help")
-                            .font(.headline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        wasHelpful == false
-                            ? Color.orange.opacity(0.1)
-                            : Color(.systemGray6)
+                radioCard
+
+                VStack(alignment: .leading, spacing: 6) {
+                    TextField(
+                        "(optional) anything else you want to mark…",
+                        text: $notes,
+                        axis: .vertical
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.ink)
+                    .tint(SiftColor.accent)
+                    .lineLimit(3...6)
+                    .padding(SiftSpace.cardPad)
+                    .background(SiftColor.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: SiftRadius.card))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: SiftRadius.card)
+                            .strokeBorder(SiftColor.line, lineWidth: 1)
+                    )
                 }
-                .buttonStyle(.plain)
-            }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Notes (optional)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("How was it?", text: $notes, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(2...4)
+                Spacer().frame(height: 80)
             }
+            .padding(.horizontal, SiftSpace.gutter)
+            .padding(.top, SiftSpace.gutter)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 10) {
+                Button("Save reflection") {
+                    onSave(selectedHelpfulness?.wasHelpful ?? nil, notes.isEmpty ? nil : notes)
+                }
+                .buttonStyle(PrimaryButtonStyle())
 
-            HStack(spacing: 12) {
-                Button {
+                Button("Skip for now") {
                     onSave(nil, nil)
-                } label: {
-                    Text("Skip")
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(GhostButtonStyle())
+            }
+            .padding(.horizontal, SiftSpace.gutter)
+            .padding(.vertical, 16)
+            .background(.regularMaterial)
+        }
+    }
 
-                Button {
-                    onSave(wasHelpful, notes.isEmpty ? nil : notes)
-                } label: {
-                    Text("Save")
-                        .frame(maxWidth: .infinity)
+    private var radioCard: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(HelpfulnessOption.allCases.enumerated()), id: \.offset) { idx, option in
+                VStack(spacing: 0) {
+                    if idx > 0 {
+                        Divider()
+                            .background(SiftColor.line)
+                    }
+                    radioRow(option)
                 }
-                .buttonStyle(.borderedProminent)
             }
         }
+        .background(SiftColor.surface)
+        .clipShape(RoundedRectangle(cornerRadius: SiftRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: SiftRadius.card)
+                .strokeBorder(SiftColor.line, lineWidth: 1)
+        )
+        .cardShadow()
+    }
+
+    private func radioRow(_ option: HelpfulnessOption) -> some View {
+        let isSelected = selectedHelpfulness == option
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedHelpfulness = option
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .strokeBorder(isSelected ? SiftColor.accent : SiftColor.line, lineWidth: 1.5)
+                        .frame(width: 20, height: 20)
+                    if isSelected {
+                        Circle()
+                            .fill(SiftColor.accent)
+                            .frame(width: 10, height: 10)
+                    }
+                }
+
+                Text(option.label)
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.ink)
+
+                Spacer()
+            }
+            .padding(.horizontal, SiftSpace.cardPad)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

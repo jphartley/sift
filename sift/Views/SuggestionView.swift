@@ -1,19 +1,20 @@
 import SwiftUI
 
 enum SuggestionViewContent {
-    static let transcriptHeading = "You shared"
+    static let transcriptHeading = "YOU SHARED"
     static let rationaleHeading = "Why these might fit"
     static let practiceHeading = "Try one of these"
     static let relevanceHeading = "Why this might help"
-    static let doneButtonTitle = "Done"
+    static let doneButtonTitle = "Done · maybe later"
     static let tryButtonTitle = "Try This"
+    static let memoryHeading = "WHAT I REMEMBER"
 
     static var mainUserFacingCopy: [String] {
         [
-            transcriptHeading,
+            "You shared",
             rationaleHeading,
             practiceHeading,
-            doneButtonTitle,
+            "Done",
             tryButtonTitle,
             relevanceHeading
         ]
@@ -27,6 +28,7 @@ struct SuggestionView: View {
     let wasEscalated: Bool
     let relevanceByID: [String: String]
     let previouslyHelpfulIDs: Set<String>
+    var hasPriorSessions: Bool = false
     let onSelect: (Practice) -> Void
     let onSkip: () -> Void
 
@@ -34,117 +36,182 @@ struct SuggestionView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(SuggestionViewContent.transcriptHeading)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(transcript)
-                        .font(.body)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(SuggestionViewContent.rationaleHeading)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(rationale)
-                        .font(.body)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-
-                Text(SuggestionViewContent.practiceHeading)
-                    .font(.headline)
-
-                ForEach(practices) { practice in
-                    practiceCard(practice)
-                }
-
-                Button(SuggestionViewContent.doneButtonTitle) {
-                    onSkip()
-                }
-                .buttonStyle(.bordered)
-                .frame(maxWidth: .infinity)
+            VStack(alignment: .leading, spacing: SiftSpace.sectGap) {
+                transcriptSection
+                if hasPriorSessions { memoryInsertCard }
+                practiceSection
+                Button(SuggestionViewContent.doneButtonTitle) { onSkip() }
+                    .buttonStyle(GhostButtonStyle())
+                Spacer().frame(height: 60)
             }
-            .padding()
+            .padding(.horizontal, SiftSpace.gutter)
+            .padding(.top, SiftSpace.gutter)
+        }
+    }
+
+    private var transcriptSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(SuggestionViewContent.transcriptHeading)
+                .font(SiftFont.eyebrow)
+                .tracking(1.2)
+                .foregroundStyle(SiftColor.quiet)
+                .textCase(.uppercase)
+
+            Text(transcript)
+                .font(SiftFont.body.italic())
+                .foregroundStyle(SiftColor.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if !rationale.isEmpty {
+                Text(SuggestionViewContent.rationaleHeading)
+                    .font(SiftFont.eyebrow)
+                    .tracking(1.2)
+                    .foregroundStyle(SiftColor.quiet)
+                    .textCase(.uppercase)
+                    .padding(.top, 4)
+
+                Text(rationale)
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var memoryInsertCard: some View {
+        HStack(spacing: 0) {
+            Rectangle()
+                .fill(SiftColor.accent)
+                .frame(width: 2)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(SuggestionViewContent.memoryHeading)
+                    .font(SiftFont.eyebrow)
+                    .tracking(1.2)
+                    .foregroundStyle(SiftColor.accentInk)
+                    .textCase(.uppercase)
+
+                Text(rationale)
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.ink)
+            }
+            .padding(SiftSpace.cardPad)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(SiftColor.surface)
+            .clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: 0,
+                    bottomTrailingRadius: SiftRadius.tile,
+                    topTrailingRadius: SiftRadius.tile
+                )
+            )
+        }
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: SiftRadius.tile,
+                topTrailingRadius: SiftRadius.tile
+            )
+        )
+    }
+
+    private var practiceSection: some View {
+        VStack(alignment: .leading, spacing: SiftSpace.rowGap) {
+            HStack {
+                Text(SuggestionViewContent.practiceHeading)
+                    .font(SiftFont.heading)
+                    .foregroundStyle(SiftColor.ink)
+                Spacer()
+                Text("\(practices.count) suggestions")
+                    .font(SiftFont.caption)
+                    .foregroundStyle(SiftColor.quiet)
+            }
+
+            ForEach(practices) { practice in
+                practiceCard(practice)
+            }
         }
     }
 
     private func practiceCard(_ practice: Practice) -> some View {
         let isExpanded = expandedID == practice.id
+        let isHelpful = previouslyHelpfulIDs.contains(practice.id)
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 expandedID = isExpanded ? nil : practice.id
             }
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(practice.name)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Text("~\(practice.durationMinutes)m")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(SiftColor.surfaceAlt)
+                            .frame(width: 42, height: 42)
+                        CategoryIcon(kind: practice.category, size: 24)
+                            .foregroundStyle(SiftColor.accentInk)
+                    }
 
-                HStack(spacing: 8) {
-                    Text(practice.category)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Color(.systemGray5))
-                        .clipShape(Capsule())
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(practice.name)
+                                .font(SiftFont.nameBold)
+                                .foregroundStyle(SiftColor.ink)
+                            Spacer()
+                            Text("~\(practice.durationMinutes)m")
+                                .font(SiftFont.caption)
+                                .foregroundStyle(SiftColor.quiet)
+                        }
 
-                    if previouslyHelpfulIDs.contains(practice.id) {
-                        Label("Helped before", systemImage: "hand.thumbsup.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
+                        Text(practice.summary)
+                            .font(SiftFont.summary)
+                            .foregroundStyle(SiftColor.muted)
+                            .lineSpacing(3)
+                            .lineLimit(isExpanded ? nil : 2)
+
+                        HStack(spacing: 6) {
+                            PillTag(text: practice.category, tone: .soft)
+                            if isHelpful {
+                                PillTag(text: "✓ Helped before", tone: .helpful)
+                            }
+                        }
+                        .padding(.top, 2)
                     }
                 }
 
-                Text(practice.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(isExpanded ? nil : 2)
-
-                if isExpanded, let relevance = relevanceByID[practice.id] {
+                if isExpanded, let relevance = relevanceByID[practice.id], !relevance.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(SuggestionViewContent.relevanceHeading)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(SiftFont.eyebrow)
+                            .tracking(1.2)
+                            .foregroundStyle(SiftColor.quiet)
+                            .textCase(.uppercase)
                         Text(relevance)
-                            .font(.caption)
-                            .foregroundStyle(.indigo)
+                            .font(SiftFont.body)
+                            .foregroundStyle(SiftColor.muted)
+                            .lineSpacing(3)
                     }
-                    .padding(.top, 4)
                 }
 
                 if isExpanded {
-                    Button {
+                    Button(SuggestionViewContent.tryButtonTitle) {
                         onSelect(practice)
-                    } label: {
-                        Text(SuggestionViewContent.tryButtonTitle)
-                            .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .padding(.top, 8)
+                    .buttonStyle(PrimaryButtonStyle())
+                    .padding(.top, 4)
                 }
             }
-            .padding()
+            .padding(SiftSpace.cardPad)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(SiftColor.surface)
+            .clipShape(RoundedRectangle(cornerRadius: SiftRadius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: SiftRadius.card)
+                    .strokeBorder(SiftColor.line, lineWidth: 1)
+            )
+            .cardShadow()
         }
         .buttonStyle(.plain)
     }

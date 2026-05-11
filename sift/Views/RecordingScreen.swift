@@ -87,66 +87,60 @@ struct RecordingScreen: View {
     @State private var viewModel = RecordingViewModel()
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch transcriptionService.modelState {
-                case .downloading, .loading, .notLoaded:
-                    loadingView
-                case .failed:
-                    recoveryView(.modelLoadingFailed) {
-                        Task {
-                            await transcriptionService.loadModel()
+        Group {
+            switch transcriptionService.modelState {
+            case .downloading, .loading, .notLoaded:
+                loadingView
+            case .failed:
+                recoveryView(.modelLoadingFailed) {
+                    Task { await transcriptionService.loadModel() }
+                }
+            case .ready:
+                switch viewModel.state {
+                case .idle, .loadingModel, .ready:
+                    readyView
+                case .preparingToRecord:
+                    preparingToRecordView
+                case .recording:
+                    recordingView
+                case .transcribing:
+                    transcribingView
+                case .analyzing:
+                    AnalyzingView(transcript: viewModel.lastTranscript)
+                case .suggesting(let transcript, let practices, let rationale, let wasEscalated, let relevanceByID):
+                    SuggestionView(
+                        transcript: transcript,
+                        practices: practices,
+                        rationale: rationale,
+                        wasEscalated: wasEscalated,
+                        relevanceByID: relevanceByID,
+                        previouslyHelpfulIDs: previouslyHelpfulIDs(),
+                        hasPriorSessions: hasPriorSessions(),
+                        onSelect: { practice in
+                            viewModel.selectPractice(practice: practice, relevance: relevanceByID[practice.id])
+                        },
+                        onSkip: { viewModel.skipSuggestions() }
+                    )
+                case .practicing(let practice, let relevance):
+                    PracticeDetailView(
+                        practice: practice,
+                        relevance: relevance,
+                        onBack: { viewModel.dismissPractice() },
+                        onComplete: { viewModel.completeSelectedPractice() }
+                    )
+                case .reflecting(let practiceName):
+                    ReflectionView(
+                        practiceName: practiceName,
+                        onSave: { wasHelpful, notes in
+                            viewModel.completeReflection(wasHelpful: wasHelpful, notes: notes)
                         }
-                    }
-                case .ready:
-                    switch viewModel.state {
-                    case .idle, .loadingModel, .ready:
-                        readyView
-                    case .preparingToRecord:
-                        preparingToRecordView
-                    case .recording:
-                        recordingView
-                    case .transcribing:
-                        transcribingView
-                    case .analyzing:
-                        AnalyzingView(transcript: viewModel.lastTranscript)
-                    case .suggesting(let transcript, let practices, let rationale, let wasEscalated, let relevanceByID):
-                        SuggestionView(
-                            transcript: transcript,
-                            practices: practices,
-                            rationale: rationale,
-                            wasEscalated: wasEscalated,
-                            relevanceByID: relevanceByID,
-                            previouslyHelpfulIDs: previouslyHelpfulIDs(),
-                            onSelect: { practice in
-                                viewModel.selectPractice(practice: practice, relevance: relevanceByID[practice.id])
-                            },
-                            onSkip: { viewModel.skipSuggestions() }
-                        )
-                    case .practicing(let practice, let relevance):
-                        PracticeDetailView(
-                            practice: practice,
-                            relevance: relevance,
-                            onBack: { viewModel.dismissPractice() },
-                            onComplete: { viewModel.completeSelectedPractice() }
-                        )
-                    case .reflecting(let practiceName):
-                        ReflectionView(
-                            practiceName: practiceName,
-                            onSave: { wasHelpful, notes in
-                                viewModel.completeReflection(wasHelpful: wasHelpful, notes: notes)
-                            }
-                        )
-                    case .recovery(let presentation):
-                        recoveryView(presentation)
-                    case .error(let message):
-                        errorView(message) {
-                            viewModel.retryAnalysis()
-                        }
-                    }
+                    )
+                case .recovery(let presentation):
+                    recoveryView(presentation)
+                case .error(let message):
+                    errorView(message) { viewModel.retryAnalysis() }
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
         }
         .task {
             viewModel.configure(
@@ -170,238 +164,264 @@ struct RecordingScreen: View {
         return Set(helpful.map(\.practiceID))
     }
 
+    private func hasPriorSessions() -> Bool {
+        let descriptor = FetchDescriptor<Session>()
+        let count = (try? modelContext.fetchCount(descriptor)) ?? 0
+        return count > 0
+    }
+
     private var loadingView: some View {
         let presentation = RecordingScreenSetup.presentation(for: transcriptionService.modelState)
+        return ScrollView {
+            VStack(spacing: SiftSpace.sectGap) {
+                Spacer().frame(height: 60)
 
-        return VStack(spacing: 18) {
-            VStack(spacing: 8) {
-                Text(presentation.title)
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                BreathingDot()
+                    .frame(width: 80, height: 80)
 
-                Text(presentation.message)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 12) {
+                    Text(presentation.title)
+                        .font(SiftFont.title)
+                        .foregroundStyle(SiftColor.ink)
+                        .multilineTextAlignment(.center)
+
+                    Text(presentation.message)
+                        .font(SiftFont.body)
+                        .foregroundStyle(SiftColor.muted)
+                        .multilineTextAlignment(.center)
+                }
+
+                switch presentation.progress {
+                case .determinate(let progress):
+                    VStack(spacing: 8) {
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(SiftColor.surfaceAlt)
+                                    .frame(height: 4)
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(SiftColor.accent)
+                                    .frame(width: geo.size.width * progress, height: 4)
+                            }
+                        }
+                        .frame(height: 4)
+                        .frame(maxWidth: 220)
+
+                        Text(String(format: "%.0f%%", progress * 100))
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(SiftColor.quiet)
+                    }
+                case .indeterminate:
+                    Text(presentation.status)
+                        .font(SiftFont.caption)
+                        .foregroundStyle(SiftColor.quiet)
+                        .multilineTextAlignment(.center)
+                }
+
+                Text(presentation.note)
+                    .font(SiftFont.caption)
+                    .foregroundStyle(SiftColor.quiet)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
             }
-
-            switch presentation.progress {
-            case .determinate(let progress):
-                ProgressView(value: progress)
-                    .progressViewStyle(.linear)
-                    .frame(maxWidth: 220)
-            case .indeterminate:
-                ProgressView()
-                    .scaleEffect(1.2)
-            }
-
-            Text(presentation.status)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Text(presentation.note)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+            .padding(.horizontal, SiftSpace.gutter)
         }
-        .padding()
     }
 
     private var readyView: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                if viewModel.lastTranscript.isEmpty {
-                    orientationView
+        let isFirstRun = viewModel.lastTranscript.isEmpty
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(eyebrowDateString())
+                    .font(SiftFont.eyebrow)
+                    .tracking(1.2)
+                    .foregroundStyle(SiftColor.quiet)
+                    .textCase(.uppercase)
+                    .padding(.bottom, 16)
+
+                if isFirstRun {
+                    Text(RecordingScreenOrientation.heading)
+                        .font(SiftFont.display)
+                        .foregroundStyle(SiftColor.ink)
+                        .padding(.bottom, 16)
+
+                    Text(RecordingScreenOrientation.reassurance)
+                        .font(SiftFont.body)
+                        .foregroundStyle(SiftColor.muted)
+                        .lineSpacing(4)
+                        .padding(.bottom, 8)
+
+                    Text(RecordingScreenOrientation.nextStep)
+                        .font(SiftFont.body)
+                        .foregroundStyle(SiftColor.muted)
+                        .lineSpacing(4)
                 } else {
-                    returningOrientationView
-                }
-
-                if !viewModel.lastTranscript.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Last Transcript")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(viewModel.lastTranscript)
-                            .font(.body)
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Group {
+                        Text(RecordingScreenOrientation.returningHeading)
+                            .font(SiftFont.display)
+                            .foregroundStyle(SiftColor.ink)
                     }
+                    .padding(.bottom, 16)
+
+                    Text(RecordingScreenOrientation.returningGuidance)
+                        .font(SiftFont.body)
+                        .foregroundStyle(SiftColor.muted)
+                        .lineSpacing(4)
                 }
 
-                Button {
-                    viewModel.startRecording()
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(.red)
-                            .frame(width: 88, height: 88)
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 34))
-                            .foregroundStyle(.white)
+                Spacer().frame(height: SiftSpace.sectGap)
+
+                HStack {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        recordButton
+                        Text("Tap to begin")
+                            .font(SiftFont.caption)
+                            .foregroundStyle(SiftColor.muted)
                     }
+                    Spacer()
                 }
-                .buttonStyle(.plain)
 
-                Text("Tap to record")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-
-                if viewModel.lastTranscript.isEmpty {
+                if isFirstRun {
+                    Spacer().frame(height: SiftSpace.sectGap)
                     starterPromptsView
                 }
 
-                if !viewModel.lastTranscript.isEmpty {
-                    Text("Swipe to History tab to review past check-ins")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 8)
-                }
+                Spacer().frame(height: 120)
             }
-            .padding()
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, SiftSpace.gutter)
+            .padding(.top, 60)
         }
     }
 
-    private var returningOrientationView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(RecordingScreenOrientation.returningHeading)
-                .font(.title3)
-                .fontWeight(.semibold)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var recordButton: some View {
+        Button {
+            viewModel.startRecording()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [SiftColor.accentSoft, SiftColor.bg],
+                            center: .center,
+                            startRadius: 39,
+                            endRadius: 66
+                        )
+                    )
+                    .frame(width: 132, height: 132)
 
-            Text(RecordingScreenOrientation.returningGuidance)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                Circle()
+                    .fill(SiftColor.accent)
+                    .frame(width: 78, height: 78)
+                    .shadow(color: SiftColor.accent.opacity(0.25), radius: 16, x: 0, y: 6)
+
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.white)
+            }
         }
-    }
-
-    private var orientationView: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(RecordingScreenOrientation.heading)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(RecordingScreenOrientation.reassurance)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(RecordingScreenOrientation.nextStep)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        .buttonStyle(.plain)
     }
 
     private var starterPromptsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(RecordingScreenOrientation.starterHeading)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
+        VStack(alignment: .leading, spacing: SiftSpace.rowGap) {
             ForEach(RecordingScreenOrientation.starterPrompts, id: \.self) { prompt in
                 Text(prompt)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.muted)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: SiftRadius.pill)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                            .foregroundStyle(SiftColor.quiet)
+                    )
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var recordingView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(.red)
-                        .frame(width: 10, height: 10)
-                    Text("Recording")
-                        .font(.headline)
-                        .foregroundStyle(.red)
+            VStack(alignment: .leading, spacing: 0) {
+                Text("LISTENING")
+                    .font(SiftFont.eyebrow)
+                    .tracking(1.2)
+                    .foregroundStyle(SiftColor.quiet)
+                    .padding(.bottom, 16)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("I'm here.")
+                        .font(SiftFont.display)
+                        .foregroundStyle(SiftColor.ink)
+                    Text("Take your time.")
+                        .font(SiftFont.display)
+                        .foregroundStyle(SiftColor.muted)
                 }
-
-                Text(formatDuration(viewModel.recordingDuration))
-                    .font(.system(size: 36, weight: .medium, design: .monospaced))
+                .lineSpacing(4)
+                .padding(.bottom, SiftSpace.sectGap)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, SiftSpace.gutter)
 
-            HStack(spacing: 2) {
-                ForEach(0..<30, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(.red.opacity(barOpacity(for: i)))
-                        .frame(width: 3, height: barHeight(for: i))
-                }
+            WaveformRibbon(height: 80)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, SiftSpace.gutter)
+                .foregroundStyle(SiftColor.accent)
+                .padding(.bottom, SiftSpace.sectGap)
+
+            if !viewModel.lastTranscript.isEmpty {
+                Text(viewModel.lastTranscript)
+                    .font(SiftFont.body.italic())
+                    .foregroundStyle(SiftColor.muted)
+                    .lineLimit(2)
+                    .padding(.horizontal, SiftSpace.gutter)
+                    .padding(.bottom, SiftSpace.sectGap)
             }
-            .frame(height: 40)
-
-            Button {
-                viewModel.stopRecording()
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.red)
-                        .frame(width: 60, height: 60)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(.white)
-                        .frame(width: 20, height: 20)
-                }
-            }
-            .buttonStyle(.plain)
-
-            Text("Tap to stop")
-                .font(.headline)
-                .foregroundStyle(.secondary)
 
             Spacer()
+
+            VStack(spacing: 16) {
+                Button {
+                    viewModel.stopRecording()
+                } label: {
+                    Text("Stop")
+                        .font(SiftFont.nameBold)
+                        .foregroundStyle(SiftColor.accentInk)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 14)
+                        .background(SiftColor.accentSoft)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Text("Reading on this phone only.")
+                    .font(SiftFont.eyebrow)
+                    .foregroundStyle(SiftColor.quiet)
+            }
+            .padding(.bottom, 48)
         }
     }
 
     private var preparingToRecordView: some View {
         VStack(spacing: 18) {
-            ProgressView()
-                .scaleEffect(1.2)
-
+            BreathingDot()
+                .frame(width: 80, height: 80)
             Text(RecordingScreenRecordingStartup.status)
-                .font(.headline)
-                .foregroundStyle(.secondary)
+                .font(SiftFont.body)
+                .foregroundStyle(SiftColor.muted)
         }
         .padding()
     }
 
-    private func barOpacity(for index: Int) -> Double {
-        let normalizedLevel = Double(viewModel.audioLevel + 60) / 60.0
-        let clamped = min(max(normalizedLevel, 0.0), 1.0)
-        let threshold = Double(index) / 30.0
-        return clamped > (1.0 - threshold) ? 1.0 : 0.2
-    }
-
-    private func barHeight(for index: Int) -> CGFloat {
-        let base: CGFloat = 8
-        let normalizedLevel = Double(viewModel.audioLevel + 60) / 60.0
-        let clamped = min(max(normalizedLevel, 0.0), 1.0)
-        let threshold = Double(index) / 30.0
-        return clamped > (1.0 - threshold) ? base + CGFloat(clamped * 28.0) : base
-    }
-
     private var transcribingView: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.2)
+            BreathingDot()
+                .frame(width: 80, height: 80)
             Text("Transcribing...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(SiftFont.body)
+                .foregroundStyle(SiftColor.muted)
         }
     }
 
@@ -409,56 +429,76 @@ struct RecordingScreen: View {
         _ presentation: CheckInRecoveryPresentation,
         primaryOverride: (() -> Void)? = nil
     ) -> some View {
-        VStack(spacing: 18) {
-            Image(systemName: "info.circle.fill")
-                .font(.system(size: 38))
-                .foregroundStyle(.blue)
+        let isMicDenied = presentation.kind == .microphonePermissionDenied
+        return ScrollView {
+            VStack(spacing: SiftSpace.sectGap) {
+                Spacer().frame(height: 60)
 
-            VStack(spacing: 8) {
-                Text(presentation.title)
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                ZStack {
+                    Circle()
+                        .fill(SiftColor.surface)
+                        .frame(width: 72, height: 72)
+                        .cardShadow()
+                    Image(systemName: isMicDenied ? "mic.slash" : "exclamationmark.triangle")
+                        .font(.system(size: 26))
+                        .foregroundStyle(SiftColor.danger)
+                }
 
-                Text(presentation.message)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-            }
+                VStack(spacing: 10) {
+                    Text(presentation.title)
+                        .font(SiftFont.title)
+                        .foregroundStyle(SiftColor.ink)
+                        .multilineTextAlignment(.center)
+                    Text(presentation.message)
+                        .font(SiftFont.body)
+                        .foregroundStyle(SiftColor.muted)
+                        .multilineTextAlignment(.center)
+                }
 
-            Button(presentation.primaryActionLabel) {
-                if let primaryOverride {
-                    primaryOverride()
-                } else {
-                    handleRecoveryAction(presentation.primaryAction)
+                VStack(spacing: 12) {
+                    Button(presentation.primaryActionLabel) {
+                        if let primaryOverride {
+                            primaryOverride()
+                        } else {
+                            handleRecoveryAction(presentation.primaryAction)
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+
+                    if let secondaryLabel = presentation.secondaryActionLabel,
+                       let secondaryAction = presentation.secondaryAction {
+                        Button(secondaryLabel) {
+                            handleRecoveryAction(secondaryAction)
+                        }
+                        .buttonStyle(GhostButtonStyle())
+                    }
                 }
             }
-            .buttonStyle(.borderedProminent)
-
-            if let secondaryActionLabel = presentation.secondaryActionLabel,
-               let secondaryAction = presentation.secondaryAction {
-                Button(secondaryActionLabel) {
-                    handleRecoveryAction(secondaryAction)
-                }
-                .buttonStyle(.bordered)
-            }
+            .padding(.horizontal, SiftSpace.gutter)
         }
-        .padding()
     }
 
     private func errorView(_ message: String, retry: @escaping () -> Void) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: "info.circle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(.blue)
-            Text(message)
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            Button("Retry") {
-                retry()
+        ScrollView {
+            VStack(spacing: SiftSpace.sectGap) {
+                Spacer().frame(height: 60)
+                ZStack {
+                    Circle()
+                        .fill(SiftColor.surface)
+                        .frame(width: 72, height: 72)
+                        .cardShadow()
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 26))
+                        .foregroundStyle(SiftColor.danger)
+                }
+                Text(message)
+                    .font(SiftFont.body)
+                    .foregroundStyle(SiftColor.muted)
+                    .multilineTextAlignment(.center)
+                Button("Retry") { retry() }
+                    .buttonStyle(PrimaryButtonStyle())
             }
-            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, SiftSpace.gutter)
         }
     }
 
@@ -471,9 +511,7 @@ struct RecordingScreen: View {
         case .tryAgain:
             _ = viewModel.retryPermission()
         case .retryModelLoading:
-            Task {
-                await transcriptionService.loadModel()
-            }
+            Task { await transcriptionService.loadModel() }
         case .retrySuggestions:
             viewModel.retryAnalysis()
         case .recordAgain:
@@ -483,9 +521,9 @@ struct RecordingScreen: View {
         }
     }
 
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let seconds = Int(duration)
-        let tenths = Int((duration - Double(seconds)) * 10)
-        return String(format: "%d.%ds", seconds, tenths)
+    private func eyebrowDateString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE · h:mm a"
+        return formatter.string(from: Date())
     }
 }
