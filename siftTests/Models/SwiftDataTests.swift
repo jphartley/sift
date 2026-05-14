@@ -182,6 +182,76 @@ struct SwiftDataTests {
         #expect(history[3].wasHelpful == true)
     }
 
+    @Test func recommendationHistoryReturnsEmptyForNoSessions() throws {
+        let container = try makeContainer()
+        let store = SwiftDataSessionStore(modelContext: container.mainContext)
+
+        let history = try store.recommendationHistory()
+
+        #expect(history.isEmpty)
+    }
+
+    @Test func recommendationHistoryReturnsAllSessionsAtExactLimit() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = SwiftDataSessionStore(modelContext: context)
+
+        for index in 0..<20 {
+            context.insert(makeSession(index: index))
+        }
+        try context.save()
+
+        let history = try store.recommendationHistory()
+
+        #expect(history.count == 20)
+    }
+
+    @Test func recommendationHistoryDropsUnhelpfulOlderSessionsBeyondLimit() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = SwiftDataSessionStore(modelContext: context)
+
+        for index in 0..<21 {
+            context.insert(makeSession(index: index))
+        }
+        try context.save()
+
+        let history = try store.recommendationHistory()
+
+        // Only the 10 most recent are kept; no helpful older sessions to supplement
+        #expect(history.count == 10)
+        let transcripts = history.map(\.transcript)
+        #expect(transcripts.first == "full transcript 20")
+        #expect(transcripts.last == "full transcript 11")
+        #expect(!transcripts.contains("full transcript 10"))
+    }
+
+    @Test func recommendationHistoryCapsHelpfulOlderSessionsAtTen() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = SwiftDataSessionStore(modelContext: context)
+
+        // 30 sessions: indices 20–29 are the 10 most recent; indices 0–14 are all helpful
+        for index in 0..<30 {
+            let isHelpfulOlder = index < 15
+            context.insert(makeSession(
+                index: index,
+                wasHelpful: isHelpfulOlder ? true : nil,
+                practiceName: isHelpfulOlder ? "Practice \(index)" : nil
+            ))
+        }
+        try context.save()
+
+        let history = try store.recommendationHistory()
+
+        // 10 recent (20–29) + 10 capped helpful older (5–14, the 10 most recent of the 15 helpful)
+        #expect(history.count == 20)
+        let transcripts = history.map(\.transcript)
+        #expect(transcripts.contains("full transcript 14"))
+        #expect(transcripts.contains("full transcript 5"))
+        #expect(!transcripts.contains("full transcript 4"))
+    }
+
     @Test func recommendationHistorySelectsRecentPlusOlderHelpfulSessions() throws {
         let container = try makeContainer()
         let context = container.mainContext

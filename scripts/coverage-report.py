@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 import json, sys, os, subprocess, glob
 
-data = json.load(sys.stdin)
-cmd = data.get("tool_input", {}).get("command", "")
-if "xcodebuild test" not in cmd:
-    sys.exit(0)
+# With --hook: reads PostToolUse event from stdin and filters to xcodebuild test runs.
+# Without args: prints coverage for the most recent xcresult immediately.
+if "--hook" in sys.argv:
+    try:
+        data = json.load(sys.stdin)
+    except Exception:
+        sys.exit(0)
+    cmd = data.get("tool_input", {}).get("command", "")
+    if "xcodebuild test" not in cmd:
+        sys.exit(0)
 
 results = sorted(
     glob.glob(os.path.expanduser("~/Library/Developer/Xcode/DerivedData/sift-*/Logs/Test/*.xcresult")),
@@ -12,6 +18,7 @@ results = sorted(
     reverse=True,
 )
 if not results:
+    print("No xcresult found in DerivedData.")
     sys.exit(0)
 
 proc = subprocess.run(
@@ -20,11 +27,13 @@ proc = subprocess.run(
     text=True,
 )
 if proc.returncode != 0:
+    print(f"xccov failed: {proc.stderr.strip()}")
     sys.exit(0)
 
 cov = json.loads(proc.stdout)
 app = next((t for t in cov.get("targets", []) if t["name"] == "sift.app"), None)
 if not app:
+    print("No sift.app target in coverage data.")
     sys.exit(0)
 
 overall = app["lineCoverage"] * 100
