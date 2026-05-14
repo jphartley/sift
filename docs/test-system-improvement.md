@@ -26,7 +26,7 @@ Prioritized checklist for improving test coverage and infrastructure. See [tech-
 
 ## Tier 3 — Right direction, not urgent
 
-- [ ] **Mutation testing with `muter`** — target `GeminiRecommendationRouter` (the `0.7` confidence threshold) and `GeminiRecommendationParser` (silent `compactMap` drops). Line coverage won't catch these. (`selectRecommendationHistory()` was previously listed here but is already well-covered with boundary tests at 5/20/21/30 sessions — see [`SwiftDataTests.swift:157-292`](../siftTests/Models/SwiftDataTests.swift).)
+- [x] **Mutation testing with `muter`** — explored and not pursued; muter's Swift Testing compatibility is unverified and undocumented, and the only realistic value-adds (router boundary test, parser silent-drop) were already added in Tier 1 without it. Full writeup in [mutation-testing.md](mutation-testing.md).
 - [ ] **Snapshot tests for Design components** — once the UI stabilizes, one snapshot suite for `SiftComponents` and `CategoryIcon` would catch visual regressions cheaply with minimal maintenance.
 - [ ] **Integration test for the recommendation pipeline** — one happy-path test: Recording → Transcription → Gemini (fake) → SwiftData persistence → history retrieval. Catches wiring errors that unit tests with fakes miss.
 - [ ] **Consolidate duplicated test fakes into `siftTests/Fakes/`** — `FakeRequester`, `FakeGeminiModelRequester`, and `TrackingGeminiRequester` are three near-identical implementations of `GeminiModelRequesting` across three files; similarly `FakeSessionStore` / `FakeHistorySessionStore`. Not actively painful, but worth doing before the Tier 1/2 additions above so they don't add a fourth fake.
