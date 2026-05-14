@@ -111,6 +111,7 @@ siftUITests/
   - Test file organization mirrors source: `siftTests/Models/`, `siftTests/ViewModels/`, etc.
   - Run `xcodebuild test` before committing. A commit that breaks tests is invalid.
   - For fast feedback during development, skip the slow UI tests: `xcodebuild test ... -skip-testing:siftUITests`
+  - After every test run, display a per-file coverage summary: `echo '{"tool_input":{"command":"xcodebuild test"}}' | python3 scripts/coverage-report.py`
   - See `/docs/testing.md` for detailed patterns and the test pyramid.
 - **Actor isolation**: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` is set. Types default to `@MainActor` unless explicitly annotated otherwise.
 - **Observation**: Uses `@Observable` (Swift 6 Observation framework), not `@ObservableObject`/`@Published`.
