@@ -50,6 +50,45 @@ struct HistoryViewModelTests {
 
         #expect(viewModel.deletionErrorMessage == nil)
     }
+
+    @Test func deletingLastSessionSucceeds() {
+        let store = FakeHistorySessionStore()
+        let viewModel = HistoryViewModel()
+        let only = Session(transcript: "only session")
+        viewModel.configure(sessionStore: store)
+
+        viewModel.deleteSessions(at: IndexSet(integer: 0), from: [only])
+
+        #expect(store.deletedSessions.count == 1)
+        #expect(store.deletedSessions[0] === only)
+        #expect(viewModel.deletionErrorMessage == nil)
+    }
+
+    @Test func deletingAllSessionsSucceeds() {
+        let store = FakeHistorySessionStore()
+        let viewModel = HistoryViewModel()
+        let sessions = [Session(transcript: "a"), Session(transcript: "b"), Session(transcript: "c")]
+        viewModel.configure(sessionStore: store)
+
+        viewModel.deleteSessions(at: IndexSet(0..<sessions.count), from: sessions)
+
+        #expect(store.deletedSessions.count == 3)
+        #expect(viewModel.deletionErrorMessage == nil)
+    }
+
+    @Test func successfulDeletionClearsPreviousError() {
+        let viewModel = HistoryViewModel()
+        // Trigger an error by deleting without a store
+        viewModel.deleteSessions(at: IndexSet(integer: 0), from: [Session(transcript: "test")])
+        #expect(viewModel.deletionErrorMessage != nil)
+
+        // Successful deletion should clear it
+        let store = FakeHistorySessionStore()
+        viewModel.configure(sessionStore: store)
+        viewModel.deleteSessions(at: IndexSet(integer: 0), from: [Session(transcript: "test")])
+
+        #expect(viewModel.deletionErrorMessage == nil)
+    }
 }
 
 private final class FakeHistorySessionStore: SessionStore {

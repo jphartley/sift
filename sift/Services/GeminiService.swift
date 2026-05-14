@@ -39,15 +39,18 @@ final class GeminiService: RecommendationClient {
     private let promptBuilder: GeminiPromptBuilder
     private let router: GeminiRecommendationRouter
     private let apiKeyProvider: () -> String
+    private let logger: (String) -> Void
 
     init(
         promptBuilder: GeminiPromptBuilder = GeminiPromptBuilder(),
         router: GeminiRecommendationRouter = GeminiRecommendationRouter(requester: LiveGeminiModelRequester()),
-        apiKeyProvider: @escaping () -> String = { Secrets.geminiApiKey }
+        apiKeyProvider: @escaping () -> String = { Secrets.geminiApiKey },
+        logger: @escaping (String) -> Void = { print($0) }
     ) {
         self.promptBuilder = promptBuilder
         self.router = router
         self.apiKeyProvider = apiKeyProvider
+        self.logger = logger
     }
 
     func recommend(
@@ -60,9 +63,9 @@ final class GeminiService: RecommendationClient {
         }
 
         let prompt = promptBuilder.buildPrompt(transcript: transcript, history: history)
-        print("[GeminiService] Sending to \(GeminiRecommendationRouter.flashModel) — prompt length: \(prompt.count) chars, history entries: \(history.count)")
+        logger("[GeminiService] Sending to \(GeminiRecommendationRouter.flashModel) — prompt length: \(prompt.count) chars, history entries: \(history.count)")
         let result = try await router.recommend(prompt: prompt, apiKey: key)
-        print("[GeminiService] Success — model: \(result.modelUsed), confidence: \(result.confidence), escalated: \(result.wasEscalated), practices: \(result.practices.map(\.practiceID))")
+        logger("[GeminiService] Success — model: \(result.modelUsed), confidence: \(result.confidence), escalated: \(result.wasEscalated), practices: \(result.practices.map(\.practiceID))")
         return result
     }
 }

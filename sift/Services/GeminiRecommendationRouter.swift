@@ -21,15 +21,18 @@ struct GeminiRecommendationRouter {
     private let requester: GeminiModelRequesting
     private let parser: GeminiRecommendationParser
     private let retryPolicy: GeminiRetryPolicy
+    private let logger: (String) -> Void
 
     init(
         requester: GeminiModelRequesting,
         parser: GeminiRecommendationParser = GeminiRecommendationParser(),
-        retryPolicy: GeminiRetryPolicy = GeminiRetryPolicy()
+        retryPolicy: GeminiRetryPolicy = GeminiRetryPolicy(),
+        logger: @escaping (String) -> Void = { print($0) }
     ) {
         self.requester = requester
         self.parser = parser
         self.retryPolicy = retryPolicy
+        self.logger = logger
     }
 
     func recommend(prompt: String, apiKey: String) async throws -> RecommendationResult {
@@ -47,11 +50,11 @@ struct GeminiRecommendationRouter {
             if flashResult.confidence >= Self.confidenceThreshold {
                 return flashResult
             }
-            print("[GeminiService] Confidence \(flashResult.confidence) below threshold \(Self.confidenceThreshold), escalating to Pro")
+            logger("[GeminiService] Confidence \(flashResult.confidence) below threshold \(Self.confidenceThreshold), escalating to Pro")
             return try await requestPro(prompt: prompt, apiKey: apiKey)
         } catch {
             if retryPolicy.isRetryableServerError(error) {
-                print("[GeminiService] Flash failed with server error, falling back to Pro")
+                logger("[GeminiService] Flash failed with server error, falling back to Pro")
                 return try await requestPro(prompt: prompt, apiKey: apiKey)
             }
             throw error
