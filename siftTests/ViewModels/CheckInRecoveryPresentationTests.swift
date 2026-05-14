@@ -58,4 +58,33 @@ struct CheckInRecoveryPresentationTests {
         #expect(presentation.primaryActionLabel == "Try saving again")
         #expect(presentation.primaryAction == .trySavingAgain)
     }
+
+    // MARK: - Structural invariants
+
+    @Test func secondaryLabelAndActionAreAlwaysPaired() {
+        // A presentation must never have a label without an action or vice versa
+        let all: [CheckInRecoveryPresentation] = [
+            .microphonePermissionDenied, .modelLoadingFailed, .emptySpeech,
+            .analysisFailed, .emptySuggestions, .saveFailed
+        ]
+        for presentation in all {
+            let hasLabel = presentation.secondaryActionLabel != nil
+            let hasAction = presentation.secondaryAction != nil
+            #expect(hasLabel == hasAction, "secondaryActionLabel and secondaryAction must be both set or both nil for kind \(presentation.kind)")
+        }
+    }
+
+    @Test func eachKindMapsToExpectedPrimaryAction() {
+        let expected: [(CheckInRecoveryPresentation, CheckInRecoveryPresentation.Action)] = [
+            (.microphonePermissionDenied, .openSettings),
+            (.modelLoadingFailed,         .retryModelLoading),
+            (.emptySpeech,                .recordAgain),
+            (.analysisFailed,             .retrySuggestions),
+            (.emptySuggestions,           .retrySuggestions),
+            (.saveFailed,                 .trySavingAgain),
+        ]
+        for (presentation, expectedAction) in expected {
+            #expect(presentation.primaryAction == expectedAction, "kind \(presentation.kind) should use \(expectedAction)")
+        }
+    }
 }

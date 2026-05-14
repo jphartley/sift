@@ -4,28 +4,7 @@ struct ReflectionView: View {
     let practiceName: String
     let onSave: (Bool?, String?) -> Void
 
-    @State private var selectedHelpfulness: HelpfulnessOption? = nil
-    @State private var notes: String = ""
-
-    enum HelpfulnessOption: CaseIterable {
-        case helped, aLittle, notReally
-
-        var label: String {
-            switch self {
-            case .helped:    return "Helped"
-            case .aLittle:   return "A little"
-            case .notReally: return "Not really"
-            }
-        }
-
-        var wasHelpful: Bool? {
-            switch self {
-            case .helped:    return true
-            case .aLittle:   return nil
-            case .notReally: return false
-            }
-        }
-    }
+    @State private var viewModel = ReflectionViewModel()
 
     var body: some View {
         ScrollView {
@@ -47,7 +26,7 @@ struct ReflectionView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     TextField(
                         "(optional) anything else you want to mark…",
-                        text: $notes,
+                        text: $viewModel.notes,
                         axis: .vertical
                     )
                     .font(SiftFont.body)
@@ -71,7 +50,7 @@ struct ReflectionView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
                 Button("Save reflection") {
-                    onSave(selectedHelpfulness?.wasHelpful ?? nil, notes.isEmpty ? nil : notes)
+                    onSave(viewModel.wasHelpfulForSave, viewModel.notesForSave)
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
@@ -88,7 +67,7 @@ struct ReflectionView: View {
 
     private var radioCard: some View {
         VStack(spacing: 0) {
-            ForEach(Array(HelpfulnessOption.allCases.enumerated()), id: \.offset) { idx, option in
+            ForEach(Array(ReflectionViewModel.HelpfulnessOption.allCases.enumerated()), id: \.offset) { idx, option in
                 VStack(spacing: 0) {
                     if idx > 0 {
                         Divider()
@@ -107,11 +86,11 @@ struct ReflectionView: View {
         .cardShadow()
     }
 
-    private func radioRow(_ option: HelpfulnessOption) -> some View {
-        let isSelected = selectedHelpfulness == option
+    private func radioRow(_ option: ReflectionViewModel.HelpfulnessOption) -> some View {
+        let isSelected = viewModel.selectedHelpfulness == option
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                selectedHelpfulness = option
+                viewModel.selectedHelpfulness = option
             }
         } label: {
             HStack(spacing: 14) {
