@@ -35,6 +35,46 @@ struct GeminiRecommendationRouterTests {
         ])
     }
 
+    @Test func confidence0_69EscalatesToPro() async throws {
+        let requester = FakeGeminiModelRequester(responses: [
+            GeminiRecommendationRouter.flashModel: .success(responseJSON(confidence: 0.69)),
+            GeminiRecommendationRouter.proModel: .success(responseJSON(confidence: 0.8, practiceID: "body-scan"))
+        ])
+        let router = GeminiRecommendationRouter(requester: requester)
+
+        let result = try await router.recommend(prompt: "prompt", apiKey: "key")
+
+        #expect(result.wasEscalated)
+        #expect(requester.requestedModels == [
+            GeminiRecommendationRouter.flashModel,
+            GeminiRecommendationRouter.proModel
+        ])
+    }
+
+    @Test func confidence0_70DoesNotEscalate() async throws {
+        let requester = FakeGeminiModelRequester(responses: [
+            GeminiRecommendationRouter.flashModel: .success(responseJSON(confidence: 0.70))
+        ])
+        let router = GeminiRecommendationRouter(requester: requester)
+
+        let result = try await router.recommend(prompt: "prompt", apiKey: "key")
+
+        #expect(!result.wasEscalated)
+        #expect(requester.requestedModels == [GeminiRecommendationRouter.flashModel])
+    }
+
+    @Test func confidence0_71DoesNotEscalate() async throws {
+        let requester = FakeGeminiModelRequester(responses: [
+            GeminiRecommendationRouter.flashModel: .success(responseJSON(confidence: 0.71))
+        ])
+        let router = GeminiRecommendationRouter(requester: requester)
+
+        let result = try await router.recommend(prompt: "prompt", apiKey: "key")
+
+        #expect(!result.wasEscalated)
+        #expect(requester.requestedModels == [GeminiRecommendationRouter.flashModel])
+    }
+
     @Test func retryableFlashFailureFallsBackToPro() async throws {
         let requester = FakeGeminiModelRequester(responses: [
             GeminiRecommendationRouter.flashModel: .failure(testError("HTTP 503: unavailable")),

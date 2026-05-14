@@ -26,6 +26,15 @@ struct PracticeAttemptTests {
         #expect(attempt.wasHelpful == false)
     }
 
+    @Test func practiceNameMatchesSourcePracticeName() {
+        TestHelpers.setupPractices()
+        let practice = Practice.all.first(where: { $0.id == "box-breathing" })!
+        let attempt = PracticeAttempt(practiceID: practice.id, practiceName: practice.name)
+
+        #expect(attempt.practiceName == practice.name)
+        #expect(attempt.practiceName != attempt.practiceID)
+    }
+
     @Test func defaultInitGeneratesUUID() async {
         let a = PracticeAttempt()
         let b = PracticeAttempt()

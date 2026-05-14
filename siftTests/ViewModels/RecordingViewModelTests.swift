@@ -562,6 +562,33 @@ struct RecordingViewModelTests {
         #expect(viewModel.pendingSession?.transcript == "I feel anxious")
     }
 
+    @Test func partiallyResolvablePracticesDropsBogusIds() async {
+        let recommendationClient = FakeRecommendationClient(result: RecommendationResult(
+            rationale: "Try these.",
+            practices: [
+                (practiceID: "box-breathing", relevance: "Grounding."),
+                (practiceID: "nonexistent-practice", relevance: "Not in library.")
+            ],
+            confidence: 0.8,
+            modelUsed: "gemini-3-flash-preview",
+            wasEscalated: false
+        ))
+        let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
+        viewModel.state = .ready
+
+        await startRecording(viewModel)
+        if let task = viewModel.stopRecording() {
+            await task.value
+        }
+
+        guard case .suggesting(_, let practices, _, _, _) = viewModel.state else {
+            #expect(Bool(false), "Expected .suggesting state")
+            return
+        }
+        #expect(practices.count == 1)
+        #expect(practices[0].id == "box-breathing")
+    }
+
     @Test func retryAfterEmptySuggestionsReusesPendingTranscript() async {
         let recommendationClient = SequencedRecommendationClient(results: [
             .success(RecommendationResult(
