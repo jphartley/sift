@@ -22,3 +22,18 @@ Suggested direction:
 - Avoid a broad design system until the interaction model settles.
 
 ## Low Priority
+
+### Strengthen test infrastructure foundations
+
+The test suite is healthy (156 tests, 0.77x test/production LOC ratio, clean protocol-based DI) but missing two foundational pieces: code coverage reporting and a CI pipeline. Without these, test quality is hard to track and regressions can slip through undetected.
+
+Known coverage gaps worth closing:
+- `AudioRecorderService` — only tested indirectly via `RecordingViewModel`
+- `GeminiLoggingTests` — stub file with a single test
+- `selectRecommendationHistory()` in `CheckInServices` — set/sort logic with likely untested edge cases
+
+Suggested direction:
+- Enable code coverage in the Xcode test scheme (30-minute task).
+- Add a GitHub Actions workflow running `xcodebuild test` on every PR.
+- Add direct unit tests for `AudioRecorderService` and fill `GeminiLoggingTests`.
+- Once the above are in place, trial mutation testing (`muter`) against the three highest-value files: `GeminiRecommendationRouter`, `GeminiRecommendationParser`, and the `selectRecommendationHistory` method. These contain boundary conditions (the `0.7` confidence threshold, silent `compactMap` drops) that line coverage alone won't validate.
