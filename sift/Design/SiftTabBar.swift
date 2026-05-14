@@ -54,7 +54,7 @@ struct SiftTabBar: View {
         Canvas { ctx, size in
             let cx = size.width / 2, cy = size.height / 2
             let outer: CGFloat = 8, inner: CGFloat = 3.2
-            var stroke = ctx
+            let stroke = ctx
             stroke.stroke(
                 Path { p in p.addEllipse(in: CGRect(x: cx - outer, y: cy - outer,
                                                     width: outer * 2, height: outer * 2)) },
@@ -73,7 +73,7 @@ struct SiftTabBar: View {
     private var historyIcon: some View {
         Canvas { ctx, size in
             let left: CGFloat = 4, right: CGFloat = 18
-            var stroke = ctx
+            let stroke = ctx
             for y in [CGFloat(7), 11, 15] {
                 stroke.stroke(
                     Path { p in
@@ -89,7 +89,7 @@ struct SiftTabBar: View {
 
     private var privacyIcon: some View {
         Canvas { ctx, size in
-            var stroke = ctx
+            let stroke = ctx
             stroke.stroke(
                 Path { p in
                     p.move(to: CGPoint(x: 11, y: 3))

@@ -24,16 +24,16 @@ struct CategoryIcon: View {
 
     private func draw(ctx: GraphicsContext) {
         let sw: CGFloat = 1.4
-        var s = ctx
+        let s = ctx
         s.stroke(Path { _ in }, with: .foreground, lineWidth: sw)
 
         func stroke(_ p: Path, lw: CGFloat = sw) {
-            var c = ctx
+            let c = ctx
             c.stroke(p, with: .foreground,
                      style: StrokeStyle(lineWidth: lw, lineCap: .round, lineJoin: .round))
         }
         func fill(_ p: Path) {
-            var c = ctx
+            let c = ctx
             c.fill(p, with: .foreground)
         }
 
