@@ -4,8 +4,7 @@ import UIKit
 
 public enum RecordingScreenOrientation {
     public static let heading = "Take a moment to arrive"
-    public static let reassurance = "There is no right or wrong way to do this. Speak for about a minute about what feels most alive right now: what happened, how it feels, or what kind of support you want."
-    public static let nextStep = "Sift will transcribe your voice on device, reflect back what it heard, and suggest a few practices you can choose from."
+    public static let reassurance = "Speak for about a minute about what feels most alive right now, what happened, how it feels, or what kind of support you want. Sift will reflect back what it heard and suggest a few practices to choose from."
     public static let returningHeading = "Check in again"
     public static let returningGuidance = "Record another short voice note about what feels most alive right now. A minute is enough."
     public static let starterHeading = "You might start with:"
@@ -179,17 +178,10 @@ struct RecordingScreen: View {
                 BreathingDot()
                     .frame(width: 80, height: 80)
 
-                VStack(spacing: 12) {
-                    Text(presentation.title)
-                        .font(SiftFont.title)
-                        .foregroundStyle(SiftColor.ink)
-                        .multilineTextAlignment(.center)
-
-                    Text(presentation.message)
-                        .font(SiftFont.body)
-                        .foregroundStyle(SiftColor.muted)
-                        .multilineTextAlignment(.center)
-                }
+                Text(presentation.title)
+                    .font(SiftFont.title)
+                    .foregroundStyle(SiftColor.ink)
+                    .multilineTextAlignment(.center)
 
                 switch presentation.progress {
                 case .determinate(let progress):
@@ -231,13 +223,6 @@ struct RecordingScreen: View {
         let isFirstRun = viewModel.lastTranscript.isEmpty
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text(eyebrowDateString())
-                    .font(SiftFont.eyebrow)
-                    .tracking(1.2)
-                    .foregroundStyle(SiftColor.quiet)
-                    .textCase(.uppercase)
-                    .padding(.bottom, 16)
-
                 if isFirstRun {
                     Text(RecordingScreenOrientation.heading)
                         .font(SiftFont.display)
@@ -245,12 +230,6 @@ struct RecordingScreen: View {
                         .padding(.bottom, 16)
 
                     Text(RecordingScreenOrientation.reassurance)
-                        .font(SiftFont.body)
-                        .foregroundStyle(SiftColor.muted)
-                        .lineSpacing(4)
-                        .padding(.bottom, 8)
-
-                    Text(RecordingScreenOrientation.nextStep)
                         .font(SiftFont.body)
                         .foregroundStyle(SiftColor.muted)
                         .lineSpacing(4)
@@ -323,19 +302,15 @@ struct RecordingScreen: View {
     }
 
     private var starterPromptsView: some View {
-        VStack(alignment: .leading, spacing: SiftSpace.rowGap) {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("For example:")
+                .font(SiftFont.caption)
+                .foregroundStyle(SiftColor.quiet)
+
             ForEach(RecordingScreenOrientation.starterPrompts, id: \.self) { prompt in
                 Text(prompt)
-                    .font(SiftFont.body)
+                    .font(SiftFont.body.italic())
                     .foregroundStyle(SiftColor.muted)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: SiftRadius.pill)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
-                            .foregroundStyle(SiftColor.quiet)
-                    )
             }
         }
     }
@@ -344,26 +319,13 @@ struct RecordingScreen: View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(alignment: .leading, spacing: 0) {
-                Text("LISTENING")
-                    .font(SiftFont.eyebrow)
-                    .tracking(1.2)
-                    .foregroundStyle(SiftColor.quiet)
-                    .padding(.bottom, 16)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("I'm here.")
-                        .font(SiftFont.display)
-                        .foregroundStyle(SiftColor.ink)
-                    Text("Take your time.")
-                        .font(SiftFont.display)
-                        .foregroundStyle(SiftColor.muted)
-                }
+            Text("Take your time.")
+                .font(SiftFont.display)
+                .foregroundStyle(SiftColor.muted)
                 .lineSpacing(4)
                 .padding(.bottom, SiftSpace.sectGap)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, SiftSpace.gutter)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, SiftSpace.gutter)
 
             WaveformRibbon(height: 80)
                 .frame(maxWidth: .infinity)
@@ -382,24 +344,18 @@ struct RecordingScreen: View {
 
             Spacer()
 
-            VStack(spacing: 16) {
-                Button {
-                    viewModel.stopRecording()
-                } label: {
-                    Text("Stop")
-                        .font(SiftFont.nameBold)
-                        .foregroundStyle(SiftColor.accentInk)
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 14)
-                        .background(SiftColor.accentSoft)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-
-                Text("Reading on this phone only.")
-                    .font(SiftFont.eyebrow)
-                    .foregroundStyle(SiftColor.quiet)
+            Button {
+                viewModel.stopRecording()
+            } label: {
+                Text("Stop")
+                    .font(SiftFont.nameBold)
+                    .foregroundStyle(SiftColor.accentInk)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 14)
+                    .background(SiftColor.accentSoft)
+                    .clipShape(Capsule())
             }
+            .buttonStyle(.plain)
             .padding(.bottom, 48)
         }
     }
@@ -521,9 +477,4 @@ struct RecordingScreen: View {
         }
     }
 
-    private func eyebrowDateString() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · h:mm a"
-        return formatter.string(from: Date())
-    }
 }

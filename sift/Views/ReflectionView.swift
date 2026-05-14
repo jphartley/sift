@@ -9,23 +9,15 @@ struct ReflectionView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SiftSpace.sectGap) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("AFTER")
-                        .font(SiftFont.eyebrow)
-                        .tracking(1.2)
-                        .foregroundStyle(SiftColor.quiet)
-                        .textCase(.uppercase)
-
-                    Text("How did that land?")
-                        .font(SiftFont.title)
-                        .foregroundStyle(SiftColor.ink)
-                }
+                Text("How did that land?")
+                    .font(SiftFont.title)
+                    .foregroundStyle(SiftColor.ink)
 
                 radioCard
 
                 VStack(alignment: .leading, spacing: 6) {
                     TextField(
-                        "(optional) anything else you want to mark…",
+                        "(Optional) anything else you want to share...",
                         text: $viewModel.notes,
                         axis: .vertical
                     )

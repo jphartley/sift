@@ -5,9 +5,8 @@ enum SuggestionViewContent {
     static let rationaleHeading = "Why these might fit"
     static let practiceHeading = "Try one of these"
     static let relevanceHeading = "Why this might help"
-    static let doneButtonTitle = "Done · maybe later"
+    static let doneButtonTitle = "I'm good for now"
     static let tryButtonTitle = "Try This"
-    static let memoryHeading = "WHAT I REMEMBER"
 
     static var mainUserFacingCopy: [String] {
         [
@@ -38,10 +37,9 @@ struct SuggestionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: SiftSpace.sectGap) {
                 transcriptSection
-                if hasPriorSessions { memoryInsertCard }
                 practiceSection
                 Button(SuggestionViewContent.doneButtonTitle) { onSkip() }
-                    .buttonStyle(GhostButtonStyle())
+                    .buttonStyle(PrimaryButtonStyle(soft: true))
                 Spacer().frame(height: 60)
             }
             .padding(.horizontal, SiftSpace.gutter)
@@ -59,62 +57,21 @@ struct SuggestionView: View {
 
             Text(transcript)
                 .font(SiftFont.body.italic())
-                .foregroundStyle(SiftColor.ink)
+                .foregroundStyle(SiftColor.quiet)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if !rationale.isEmpty {
                 Text(SuggestionViewContent.rationaleHeading)
-                    .font(SiftFont.eyebrow)
-                    .tracking(1.2)
-                    .foregroundStyle(SiftColor.quiet)
-                    .textCase(.uppercase)
+                    .font(SiftFont.heading)
+                    .foregroundStyle(SiftColor.ink)
                     .padding(.top, 4)
 
                 Text(rationale)
                     .font(SiftFont.body)
-                    .foregroundStyle(SiftColor.muted)
+                    .foregroundStyle(SiftColor.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-    }
-
-    private var memoryInsertCard: some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(SiftColor.accent)
-                .frame(width: 2)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(SuggestionViewContent.memoryHeading)
-                    .font(SiftFont.eyebrow)
-                    .tracking(1.2)
-                    .foregroundStyle(SiftColor.accentInk)
-                    .textCase(.uppercase)
-
-                Text(rationale)
-                    .font(SiftFont.body)
-                    .foregroundStyle(SiftColor.ink)
-            }
-            .padding(SiftSpace.cardPad)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(SiftColor.surface)
-            .clipShape(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 0,
-                    bottomLeadingRadius: 0,
-                    bottomTrailingRadius: SiftRadius.tile,
-                    topTrailingRadius: SiftRadius.tile
-                )
-            )
-        }
-        .clipShape(
-            UnevenRoundedRectangle(
-                topLeadingRadius: 0,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: SiftRadius.tile,
-                topTrailingRadius: SiftRadius.tile
-            )
-        )
     }
 
     private var practiceSection: some View {

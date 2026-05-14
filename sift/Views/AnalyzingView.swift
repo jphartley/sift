@@ -13,17 +13,10 @@ struct AnalyzingView: View {
                 BreathingDot()
                     .frame(width: 80, height: 80)
 
-                VStack(spacing: 10) {
-                    Text("Reading what you shared")
-                        .font(SiftFont.heading)
-                        .foregroundStyle(SiftColor.ink)
-                        .multilineTextAlignment(.center)
-
-                    Text("A moment of quiet while I take it in.")
-                        .font(SiftFont.body)
-                        .foregroundStyle(SiftColor.muted)
-                        .multilineTextAlignment(.center)
-                }
+                Text("Reading what you shared")
+                    .font(SiftFont.heading)
+                    .foregroundStyle(SiftColor.ink)
+                    .multilineTextAlignment(.center)
 
                 if showTranscript, !transcript.isEmpty {
                     Text(transcript)

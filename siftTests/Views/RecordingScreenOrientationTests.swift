@@ -2,17 +2,12 @@ import Testing
 @testable import sift
 
 struct RecordingScreenOrientationTests {
-    @Test func orientationCopyExplainsHowToBegin() {
+    @Test func orientationCopyExplainsHowToBeginAndWhatHappensNext() {
         #expect(RecordingScreenOrientation.heading == "Take a moment to arrive")
-        #expect(RecordingScreenOrientation.reassurance.contains("There is no right or wrong way to do this"))
         #expect(RecordingScreenOrientation.reassurance.contains("what feels most alive right now"))
         #expect(RecordingScreenOrientation.reassurance.contains("what kind of support you want"))
-    }
-
-    @Test func orientationCopyExplainsWhatHappensNext() {
-        #expect(RecordingScreenOrientation.nextStep.contains("transcribe your voice on device"))
-        #expect(RecordingScreenOrientation.nextStep.contains("reflect back what it heard"))
-        #expect(RecordingScreenOrientation.nextStep.contains("suggest a few practices"))
+        #expect(RecordingScreenOrientation.reassurance.contains("reflect back what it heard"))
+        #expect(RecordingScreenOrientation.reassurance.contains("suggest a few practices"))
     }
 
     @Test func starterPromptsAreExposed() {
