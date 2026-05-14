@@ -14,9 +14,9 @@ Prioritized checklist for improving test coverage and infrastructure. See [tech-
 
 ## Tier 2 — Medium value, medium effort
 
-- [ ] **Fix `GeminiLoggingTests` approach** — the source-file static analysis pattern is fragile: it breaks on cosmetic print format changes and misses logging via `os.log`/`Logger`/`NSLog`. Replace with a testable `Logger` protocol injected into services, or a SwiftLint rule.
+- [x] **Fix `GeminiLoggingTests` approach** — replaced source-file static analysis with behavioral async tests. `GeminiService` and `GeminiRecommendationRouter` now accept an injected logger closure; tests capture output and assert sensitive content never appears.
 - [ ] **Add `SuggestionView` interaction test** — verify "tapping card body does X, tapping Try This button does Y" before fixing the nested button semantics, so the fix has a regression guard. Mentioned in [tech-debt.md](tech-debt.md).
-- [ ] **Expand `HistoryViewModel` deletion tests** — add explicit coverage for: deleting the last session, deletion while in edit mode, multi-select deletion.
+- [x] **Expand `HistoryViewModel` deletion tests** — added: delete last session, delete all sessions, and successful deletion clears a previous error.
 
 ## Tier 3 — Right direction, not urgent
 
@@ -30,8 +30,8 @@ Prioritized checklist for improving test coverage and infrastructure. See [tech-
 
 | Layer | Coverage | Biggest gap |
 |---|---|---|
-| Services | Strong | GeminiLogging pattern is fragile |
+| Services | Strong | None significant |
 | Models / SwiftData | Strong | None significant |
-| ViewModels | Good | CheckInRecovery shallow; no integration |
+| ViewModels | Good | No integration tests |
 | Views | Weak | Behavioral logic untested; constants only |
-| CI / Tooling | Missing | No GitHub Actions; no mutation testing |
+| CI / Tooling | Good | No mutation testing |
