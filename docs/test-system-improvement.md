@@ -9,8 +9,8 @@ Prioritized checklist for improving test coverage and infrastructure. See [tech-
 ## Tier 1 — High value, low effort
 
 - [x] **Add GitHub Actions CI** — `xcodebuild test` on every PR. One YAML file; turns all existing tests into regression guards and unblocks mutation testing.
-- [ ] **Add `CheckInRecoveryPresentationTests` edge cases** — re-trigger while already showing, concurrent state changes, recovery with no pending state. Currently only the happy-path `showRecovery` → `dismiss` flow is covered.
-- [ ] **Extract and test `ReflectionView` logic** — if the selection/callback logic is non-trivial, move it to a ViewModel and test the ViewModel. Don't test SwiftUI views directly; test the logic that drives them.
+- [x] **Add `CheckInRecoveryPresentationTests` edge cases** — added structural invariant tests: secondary label/action must always be paired, and each `Kind` maps to the correct primary action.
+- [x] **Extract and test `ReflectionView` logic** — extracted `HelpfulnessOption`, `wasHelpfulForSave`, and `notesForSave` into `ReflectionViewModel`. Added 8 unit tests including the subtle `.aLittle → nil` mapping.
 
 ## Tier 2 — Medium value, medium effort
 
