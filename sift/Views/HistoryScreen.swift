@@ -1,6 +1,12 @@
 import SwiftUI
 import SwiftData
 
+enum HistoryRowPresentation {
+    static func pillText(for attempt: PracticeAttempt) -> String {
+        attempt.practiceName
+    }
+}
+
 struct HistoryScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Session.timestamp, order: .reverse) private var sessions: [Session]
@@ -169,7 +175,7 @@ struct HistoryScreen: View {
 
                     HStack(spacing: 6) {
                         if let attempt = session.attempts.first {
-                            PillTag(text: attempt.practiceID, tone: .soft)
+                            PillTag(text: HistoryRowPresentation.pillText(for: attempt), tone: .soft)
                             Text(helpfulnessCaption(attempt))
                                 .font(SiftFont.caption)
                                 .foregroundStyle(helpfulnessColor(attempt))

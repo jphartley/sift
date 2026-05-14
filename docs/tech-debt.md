@@ -4,17 +4,6 @@ Working list of refactor and maintenance areas worth addressing after the voice 
 
 ## Medium Priority
 
-### Fix HistoryScreen pill showing practiceID instead of practiceName
-
-`HistoryScreen.sessionRow` renders the practice **slug** (`box-breathing`) in the pill instead of the human name (`Box Breathing`):
-
-```swift
-// HistoryScreen.swift:172
-PillTag(text: attempt.practiceID, tone: .soft)
-```
-
-`PracticeAttempt` already denormalizes `practiceName` for exactly this case. One-line fix to use `attempt.practiceName`. Pair with the `HistoryScreen` row regression test in [test-system-improvement.md](test-system-improvement.md) so this doesn't reappear.
-
 ### Fix nested button semantics in SuggestionView
 
 `SuggestionView` uses a tappable card button and places a second `Try This` button inside the card label. SwiftUI nested buttons can produce odd tap behavior and weak accessibility semantics.
