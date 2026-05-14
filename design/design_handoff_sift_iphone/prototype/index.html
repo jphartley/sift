@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sift — iPhone designs</title>
+<meta name="viewport" content="width=1200">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; height:100%; background:#dde0eb;
+    font-family: Figtree, -apple-system, system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="screens-1.jsx"></script>
+<script type="text/babel" src="screens-2.jsx"></script>
+<script type="text/babel" src="screens-3.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "palette": "midnight",
+  "radius": 18
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const t = PALETTES[tweaks.palette] || PALETTES.midnight;
+  const r = tweaks.radius;
+  const W = 320, H = 680;
+
+  return (
+    <React.Fragment>
+      <DesignCanvas>
+        <DCSection id="intro" title="Sift · Midnight"
+          subtitle="Locked to Midnight. Soft humanist sans (Figtree), generous whitespace, low chroma. Each screen below has its canonical state plus the edge states it most needs to handle. Use Tweaks to try other palettes or adjust radius globally.">
+        </DCSection>
+
+        <DCSection id="tokens" title="Design system" subtitle="Tokens, type scale, components, and iconography in one place.">
+          <DCArtboard id="tokens-board" label="Reference" width={1040} height={1100}>
+            <DesignSystemBoard t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="home" title="Home / Today" subtitle="Returning user vs. first run.">
+          <DCArtboard id="home-canon" label="Returning user" width={W} height={H}>
+            <HomeScreen t={t} radius={r}/>
+          </DCArtboard>
+          <DCArtboard id="home-firstrun" label="First run · empty" width={W} height={H}>
+            <HomeFirstRun t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="recording" title="Recording" subtitle="Listening, model warming up, and permission denied.">
+          <DCArtboard id="rec-canon" label="Listening" width={W} height={H}>
+            <RecordingLive t={t} radius={r}/>
+          </DCArtboard>
+          <DCArtboard id="rec-loading" label="Model loading · first run" width={W} height={H}>
+            <ModelLoadingScreen t={t} radius={r}/>
+          </DCArtboard>
+          <DCArtboard id="rec-denied" label="Mic permission denied" width={W} height={H}>
+            <MicDeniedScreen t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="analyzing" title="Analyzing" subtitle="Working state, plus the network-fail recovery.">
+          <DCArtboard id="an-canon" label="Reading transcript" width={W} height={H}>
+            <AnalyzingScreen t={t} radius={r}/>
+          </DCArtboard>
+          <DCArtboard id="an-error" label="Network error · graceful fallback" width={W} height={H}>
+            <NetworkErrorScreen t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="suggest" title="Suggestions" subtitle="First-pass vs. returning user with strong memory.">
+          <DCArtboard id="sug-canon" label="Standard suggestions" width={W} height={H}>
+            <SuggestionsScreen t={t} radius={r}/>
+          </DCArtboard>
+          <DCArtboard id="sug-returning" label="Returning · what I remember" width={W} height={H}>
+            <SuggestionsReturningScreen t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="practice" title="Practice Detail" subtitle="The steps a user actually does.">
+          <DCArtboard id="pr-canon" label="Box Breathing" width={W} height={H}>
+            <PracticeDetailScreen t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="reflect" title="Reflection" subtitle="Did it help? — quick capture.">
+          <DCArtboard id="rf-canon" label="Reflection" width={W} height={H}>
+            <ReflectionScreen t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="history" title="History" subtitle="Empty (day-one), recent (week one), and long (returning user).">
+          <DCArtboard id="hi-empty" label="Empty · first run" width={W} height={H}>
+            <HistoryEmptyScreen t={t} radius={r}/>
+          </DCArtboard>
+          <DCArtboard id="hi-canon" label="Recent · this week" width={W} height={H}>
+            <HistoryScreen t={t} radius={r}/>
+          </DCArtboard>
+          <DCArtboard id="hi-long" label="Long · returning" width={W} height={H}>
+            <HistoryLongScreen t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="privacy" title="Privacy">
+          <DCArtboard id="pv-canon" label="Privacy" width={W} height={H}>
+            <PrivacyScreen t={t} radius={r}/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Palette">
+          <TweakSelect
+            label="Palette"
+            value={tweaks.palette}
+            onChange={v => setTweak('palette', v)}
+            options={[
+              { value: 'midnight', label: 'Midnight (canonical)' },
+              { value: 'paper',    label: 'Warm paper' },
+              { value: 'sage',     label: 'Soft sage' },
+              { value: 'dawn',     label: 'Dawn' },
+              { value: 'mist',     label: 'Misty blue' },
+              { value: 'apricot',  label: 'Apricot' },
+              { value: 'lilac',    label: 'Lilac' },
+              { value: 'citrus',   label: 'Citrus' },
+              { value: 'ocean',    label: 'Ocean' },
+              { value: 'rose',     label: 'Rose' },
+              { value: 'plum',     label: 'Plum' },
+              { value: 'forest',   label: 'Forest' },
+              { value: 'ember',    label: 'Ember' },
+              { value: 'honey',    label: 'Honey' },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection label="Shape">
+          <TweakSlider
+            label="Corner radius"
+            value={tweaks.radius}
+            onChange={v => setTweak('radius', v)}
+            min={6} max={28} step={1} unit="px"
+          />
+        </TweakSection>
+      </TweaksPanel>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

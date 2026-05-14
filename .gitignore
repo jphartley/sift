@@ -49,5 +49,8 @@ sift/Services/Secrets.swift.local-backup
 # Codex local tooling
 .codex/
 
+# Claude Code
+.claude/worktrees/
+
 # Playgrounds
 playground.xcworkspace
