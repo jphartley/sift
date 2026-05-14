@@ -2,7 +2,7 @@
 
 Prioritized checklist for improving test coverage and infrastructure. See [tech-debt.md](tech-debt.md) for broader code health context.
 
-**Current state:** 156 tests, 0.82x test/production LOC ratio, Apple Swift Testing framework. Service layer is well-covered with protocol-based DI and hand-rolled fakes. Main gaps are CI/tooling, View behavioral coverage, and a few ViewModel edge cases.
+**Current state:** 156 tests, 0.82x test/production LOC ratio, Apple Swift Testing framework. Service layer is well-covered with protocol-based DI and hand-rolled fakes. Main gaps are View behavioral coverage and a few longer-horizon items.
 
 ---
 
