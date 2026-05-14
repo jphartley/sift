@@ -10,11 +10,15 @@ struct RecordingViewModelTests {
     }
 
     private func makeViewModel(
-        audioRecorder: FakeAudioRecorder = FakeAudioRecorder(),
-        transcriptionClient: FakeTranscriptionClient = FakeTranscriptionClient(),
-        recommendationClient: RecommendationClient = FakeRecommendationClient(),
-        sessionStore: FakeSessionStore = FakeSessionStore()
+        audioRecorder: FakeAudioRecorder? = nil,
+        transcriptionClient: FakeTranscriptionClient? = nil,
+        recommendationClient: RecommendationClient? = nil,
+        sessionStore: FakeSessionStore? = nil
     ) -> (RecordingViewModel, FakeAudioRecorder, FakeTranscriptionClient, RecommendationClient, FakeSessionStore) {
+        let audioRecorder = audioRecorder ?? FakeAudioRecorder()
+        let transcriptionClient = transcriptionClient ?? FakeTranscriptionClient()
+        let recommendationClient = recommendationClient ?? FakeRecommendationClient()
+        let sessionStore = sessionStore ?? FakeSessionStore()
         let viewModel = RecordingViewModel(audioRecorder: audioRecorder)
         viewModel.configure(
             sessionStore: sessionStore,

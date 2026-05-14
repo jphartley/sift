@@ -42,11 +42,11 @@ struct SwiftDataTests {
         context.insert(session)
         try context.save()
 
-        var sessionFetch = FetchDescriptor<Session>()
+        let sessionFetch = FetchDescriptor<Session>()
         var sessions = try context.fetch(sessionFetch)
         #expect(sessions.count == 1)
 
-        var attemptFetch = FetchDescriptor<PracticeAttempt>()
+        let attemptFetch = FetchDescriptor<PracticeAttempt>()
         var attempts = try context.fetch(attemptFetch)
         #expect(attempts.count == 2)
 
