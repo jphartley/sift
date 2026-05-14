@@ -1,13 +1,39 @@
 import Foundation
 import AVFoundation
 
+protocol AVAudioRecorderProtocol: AnyObject {
+    var isMeteringEnabled: Bool { get set }
+    var currentTime: TimeInterval { get }
+    @discardableResult func record() -> Bool
+    func stop()
+    func updateMeters()
+    func averagePower(forChannel channelNumber: Int) -> Float
+}
+
+extension AVAudioRecorder: AVAudioRecorderProtocol {}
+
+protocol AudioRecorderFactory {
+    func makeRecorder(url: URL, settings: [String: Any]) throws -> AVAudioRecorderProtocol
+}
+
+struct RealAudioRecorderFactory: AudioRecorderFactory {
+    func makeRecorder(url: URL, settings: [String: Any]) throws -> AVAudioRecorderProtocol {
+        try AVAudioRecorder(url: url, settings: settings)
+    }
+}
+
 @Observable
 final class AudioRecorderService: AudioRecording {
-    private var audioRecorder: AVAudioRecorder?
+    private var audioRecorder: AVAudioRecorderProtocol?
     private var timer: Timer?
+    private let recorderFactory: AudioRecorderFactory
     var isRecording = false
     var recordingDuration: TimeInterval = 0
     var audioLevel: Float = -160
+
+    init(recorderFactory: AudioRecorderFactory = RealAudioRecorderFactory()) {
+        self.recorderFactory = recorderFactory
+    }
 
     func requestPermission() async -> Bool {
         await withCheckedContinuation { continuation in
@@ -44,7 +70,7 @@ final class AudioRecorderService: AudioRecording {
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
 
-        audioRecorder = try AVAudioRecorder(url: url, settings: settings)
+        audioRecorder = try recorderFactory.makeRecorder(url: url, settings: settings)
         audioRecorder?.isMeteringEnabled = true
         audioRecorder?.record()
 
