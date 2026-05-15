@@ -136,7 +136,7 @@ struct HistoryScreen: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(dayAbbrev(session.timestamp))
-                        .font(SiftFont.body.weight(.semibold))
+                        .font(SiftFont.bodySemibold)
                         .foregroundStyle(SiftColor.ink)
                     Text(timeString(session.timestamp))
                         .font(SiftFont.caption)

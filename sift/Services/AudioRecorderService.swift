@@ -27,12 +27,14 @@ final class AudioRecorderService: AudioRecording {
     private var audioRecorder: AVAudioRecorderProtocol?
     private var timer: Timer?
     private let recorderFactory: AudioRecorderFactory
+    private let metricRecorder: MetricRecorder?
     var isRecording = false
     var recordingDuration: TimeInterval = 0
     var audioLevel: Float = -160
 
-    init(recorderFactory: AudioRecorderFactory = RealAudioRecorderFactory()) {
+    init(recorderFactory: AudioRecorderFactory = RealAudioRecorderFactory(), metricRecorder: MetricRecorder? = nil) {
         self.recorderFactory = recorderFactory
+        self.metricRecorder = metricRecorder
     }
 
     func requestPermission() async -> Bool {
@@ -53,6 +55,7 @@ final class AudioRecorderService: AudioRecording {
     }
 
     func startRecording() throws -> URL {
+        let setupStart = Date()
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
         try session.setActive(true)
@@ -72,6 +75,9 @@ final class AudioRecorderService: AudioRecording {
 
         audioRecorder = try recorderFactory.makeRecorder(url: url, settings: settings)
         audioRecorder?.isMeteringEnabled = true
+        let setupDurationMs = Int(Date().timeIntervalSince(setupStart) * 1000)
+        metricRecorder?.record(name: "audio.recorderSetup", durationMs: setupDurationMs)
+
         audioRecorder?.record()
 
         isRecording = true

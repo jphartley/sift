@@ -42,11 +42,15 @@ final class RecordingViewModel {
     func configure(
         sessionStore: SessionStore,
         transcriptionService: TranscriptionClient,
-        recommendationClient: RecommendationClient
+        recommendationClient: RecommendationClient,
+        audioRecorder: AudioRecording? = nil
     ) {
         self.sessionStore = sessionStore
         self.transcriptionService = transcriptionService
         self.recommendationClient = recommendationClient
+        if let audioRecorder {
+            self.audioRecorder = audioRecorder
+        }
     }
 
     func setup() async {

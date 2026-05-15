@@ -83,6 +83,8 @@ struct RecordingScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(TranscriptionService.self) private var transcriptionService
     @Environment(GeminiService.self) private var geminiService
+    @Environment(AudioRecorderService.self) private var audioRecorderService
+    @Environment(MetricRecorder.self) private var metricRecorder
     @State private var viewModel = RecordingViewModel()
 
     var body: some View {
@@ -143,9 +145,10 @@ struct RecordingScreen: View {
         }
         .task {
             viewModel.configure(
-                sessionStore: SwiftDataSessionStore(modelContext: modelContext),
+                sessionStore: SwiftDataSessionStore(modelContext: modelContext, recorder: metricRecorder),
                 transcriptionService: transcriptionService,
-                recommendationClient: geminiService
+                recommendationClient: geminiService,
+                audioRecorder: audioRecorderService
             )
             await viewModel.setup()
         }

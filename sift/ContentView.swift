@@ -13,6 +13,10 @@ struct ContentView: View {
                 HistoryScreen()
             case .privacy:
                 PrivacyScreen()
+            #if DEBUG
+            case .debug:
+                DebugMetricsScreen()
+            #endif
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

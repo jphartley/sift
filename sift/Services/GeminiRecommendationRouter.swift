@@ -22,26 +22,31 @@ struct GeminiRecommendationRouter {
     private let parser: GeminiRecommendationParser
     private let retryPolicy: GeminiRetryPolicy
     private let logger: (String) -> Void
+    private let recorder: MetricRecorder?
 
     init(
         requester: GeminiModelRequesting,
         parser: GeminiRecommendationParser = GeminiRecommendationParser(),
         retryPolicy: GeminiRetryPolicy = GeminiRetryPolicy(),
-        logger: @escaping (String) -> Void = { print($0) }
+        logger: @escaping (String) -> Void = { print($0) },
+        recorder: MetricRecorder? = nil
     ) {
         self.requester = requester
         self.parser = parser
         self.retryPolicy = retryPolicy
         self.logger = logger
+        self.recorder = recorder
     }
 
     func recommend(prompt: String, apiKey: String) async throws -> RecommendationResult {
         do {
-            let flashText = try await requester.request(
-                prompt: prompt,
-                apiKey: apiKey,
-                modelName: Self.flashModel
-            )
+            let flashText = try await timed(name: "gemini.flash", metadata: ["model": Self.flashModel]) {
+                try await requester.request(
+                    prompt: prompt,
+                    apiKey: apiKey,
+                    modelName: Self.flashModel
+                )
+            }
             let flashResult = try parser.parse(
                 text: flashText,
                 modelUsed: Self.flashModel,
@@ -51,27 +56,36 @@ struct GeminiRecommendationRouter {
                 return flashResult
             }
             logger("[GeminiService] Confidence \(flashResult.confidence) below threshold \(Self.confidenceThreshold), escalating to Pro")
-            return try await requestPro(prompt: prompt, apiKey: apiKey)
+            return try await requestPro(prompt: prompt, apiKey: apiKey, reason: "low_confidence")
         } catch {
             if retryPolicy.isRetryableServerError(error) {
                 logger("[GeminiService] Flash failed with server error, falling back to Pro")
-                return try await requestPro(prompt: prompt, apiKey: apiKey)
+                return try await requestPro(prompt: prompt, apiKey: apiKey, reason: "server_error")
             }
             throw error
         }
     }
 
-    private func requestPro(prompt: String, apiKey: String) async throws -> RecommendationResult {
-        let proText = try await requester.request(
-            prompt: prompt,
-            apiKey: apiKey,
-            modelName: Self.proModel
-        )
+    private func requestPro(prompt: String, apiKey: String, reason: String) async throws -> RecommendationResult {
+        let proText = try await timed(name: "gemini.pro", metadata: ["model": Self.proModel, "reason": reason]) {
+            try await requester.request(
+                prompt: prompt,
+                apiKey: apiKey,
+                modelName: Self.proModel
+            )
+        }
         return try parser.parse(
             text: proText,
             modelUsed: Self.proModel,
             wasEscalated: true
         )
+    }
+
+    private func timed<T>(name: String, metadata: [String: String]?, _ block: () async throws -> T) async throws -> T {
+        if let recorder {
+            return try await recorder.time(name: name, metadata: metadata, block)
+        }
+        return try await block()
     }
 }
 

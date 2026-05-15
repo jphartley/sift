@@ -76,7 +76,7 @@ struct PrimaryButtonStyle: ButtonStyle {
 struct GhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(SiftFont.body.weight(.medium))
+            .font(SiftFont.bodyMedium)
             .foregroundStyle(SiftColor.muted)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)

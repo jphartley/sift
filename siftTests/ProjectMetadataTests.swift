@@ -20,15 +20,23 @@ struct ProjectMetadataTests {
     @Test func appVersionMetadataIsExplicit() throws {
         let project = try projectFileText()
 
-        #expect(project.contains("MARKETING_VERSION = 0.1;"))
-        #expect(project.contains("CURRENT_PROJECT_VERSION = 1;"))
+        let marketingValues = extractAssignments(of: "MARKETING_VERSION", in: project)
+        let projectVersionValues = extractAssignments(of: "CURRENT_PROJECT_VERSION", in: project)
+
+        #expect(!marketingValues.isEmpty, "MARKETING_VERSION must appear in the project file")
+        #expect(!projectVersionValues.isEmpty, "CURRENT_PROJECT_VERSION must appear in the project file")
+
+        for value in marketingValues + projectVersionValues {
+            #expect(!value.isEmpty, "Version values must not be empty")
+            #expect(!value.hasPrefix("$"), "Version values must be explicit literals, not interpolations: \(value)")
+        }
     }
 
     @Test func applicationSupportDirectoryIsPreparedBeforeSwiftDataContainer() throws {
         let appSource = try appSourceText()
 
         let preparationCall = try #require(appSource.range(of: "try AppStoragePreparation.prepareApplicationSupportDirectory()"))
-        let containerInitialization = try #require(appSource.range(of: "ModelContainer(for: Session.self, PracticeAttempt.self)"))
+        let containerInitialization = try #require(appSource.range(of: "ModelContainer(for: Session.self, PracticeAttempt.self, MetricEvent.self)"))
 
         #expect(preparationCall.lowerBound < containerInitialization.lowerBound)
         #expect(!appSource.contains("ModelConfiguration("))
@@ -53,5 +61,17 @@ struct ProjectMetadataTests {
             .appendingPathComponent("sift")
             .appendingPathComponent("siftApp.swift")
         return try String(contentsOf: appSourceFile, encoding: .utf8)
+    }
+
+    private func extractAssignments(of key: String, in source: String) -> [String] {
+        let pattern = "\(NSRegularExpression.escapedPattern(for: key)) = ([^;]+);"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(source.startIndex..., in: source)
+        return regex.matches(in: source, range: range).compactMap { match in
+            guard match.numberOfRanges > 1, let valueRange = Range(match.range(at: 1), in: source) else {
+                return nil
+            }
+            return String(source[valueRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
     }
 }

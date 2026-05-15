@@ -15,16 +15,28 @@ enum AppStoragePreparation {
 @main
 struct siftApp: App {
     let container: ModelContainer
-    @State private var transcriptionService = TranscriptionService()
-    @State private var geminiService = GeminiService()
+    let metricRecorder: MetricRecorder
+    @State private var transcriptionService: TranscriptionService
+    @State private var geminiService: GeminiService
+    @State private var audioRecorderService: AudioRecorderService
 
     init() {
+        let resolvedContainer: ModelContainer
         do {
             try AppStoragePreparation.prepareApplicationSupportDirectory()
-            container = try ModelContainer(for: Session.self, PracticeAttempt.self)
+            resolvedContainer = try ModelContainer(for: Session.self, PracticeAttempt.self, MetricEvent.self)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
+        self.container = resolvedContainer
+        let recorder = MetricRecorder(modelContext: ModelContext(resolvedContainer))
+        self.metricRecorder = recorder
+        recorder.timeSync(name: "practiceLibrary.load") {
+            _ = Practice.all
+        }
+        _transcriptionService = State(initialValue: TranscriptionService(recorder: recorder))
+        _geminiService = State(initialValue: GeminiService(recorder: recorder))
+        _audioRecorderService = State(initialValue: AudioRecorderService(metricRecorder: recorder))
     }
 
     var body: some Scene {
@@ -35,6 +47,8 @@ struct siftApp: App {
                 }
                 .environment(transcriptionService)
                 .environment(geminiService)
+                .environment(audioRecorderService)
+                .environment(metricRecorder)
         }
         .modelContainer(container)
     }

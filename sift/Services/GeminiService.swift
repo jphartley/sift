@@ -40,20 +40,45 @@ final class GeminiService: RecommendationClient {
     private let router: GeminiRecommendationRouter
     private let apiKeyProvider: () -> String
     private let logger: (String) -> Void
+    private let recorder: MetricRecorder?
+
+    convenience init(recorder: MetricRecorder?) {
+        self.init(
+            promptBuilder: GeminiPromptBuilder(),
+            router: GeminiRecommendationRouter(requester: LiveGeminiModelRequester(), recorder: recorder),
+            apiKeyProvider: { Secrets.geminiApiKey },
+            logger: { print($0) },
+            recorder: recorder
+        )
+    }
 
     init(
         promptBuilder: GeminiPromptBuilder = GeminiPromptBuilder(),
         router: GeminiRecommendationRouter = GeminiRecommendationRouter(requester: LiveGeminiModelRequester()),
         apiKeyProvider: @escaping () -> String = { Secrets.geminiApiKey },
-        logger: @escaping (String) -> Void = { print($0) }
+        logger: @escaping (String) -> Void = { print($0) },
+        recorder: MetricRecorder? = nil
     ) {
         self.promptBuilder = promptBuilder
         self.router = router
         self.apiKeyProvider = apiKeyProvider
         self.logger = logger
+        self.recorder = recorder
     }
 
     func recommend(
+        transcript: String,
+        history: [SessionHistoryEntry]
+    ) async throws -> RecommendationResult {
+        if let recorder {
+            return try await recorder.time(name: "gemini.total") {
+                try await recommendBody(transcript: transcript, history: history)
+            }
+        }
+        return try await recommendBody(transcript: transcript, history: history)
+    }
+
+    private func recommendBody(
         transcript: String,
         history: [SessionHistoryEntry]
     ) async throws -> RecommendationResult {

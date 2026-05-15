@@ -11,8 +11,15 @@ enum ModelState: Equatable {
 
 @Observable
 final class TranscriptionService: TranscriptionClient {
+    static let modelVariant = "openai_whisper-base.en"
+
     private var whisperKit: WhisperKit?
     var modelState: ModelState = .notLoaded
+    private let recorder: MetricRecorder?
+
+    init(recorder: MetricRecorder? = nil) {
+        self.recorder = recorder
+    }
 
     func loadModel() async {
         if case .downloading = modelState { return }
@@ -22,19 +29,24 @@ final class TranscriptionService: TranscriptionClient {
         modelState = .downloading(progress: 0)
 
         do {
-            let modelFolder = try await WhisperKit.download(
-                variant: "openai_whisper-base.en",
-                progressCallback: { [weak self] progress in
-                    self?.modelState = .downloading(progress: progress.fractionCompleted)
-                }
-            )
+            let variantMetadata = ["variant": Self.modelVariant]
+            let modelFolder = try await timed(name: "whisper.download", metadata: variantMetadata) {
+                try await WhisperKit.download(
+                    variant: Self.modelVariant,
+                    progressCallback: { [weak self] progress in
+                        self?.modelState = .downloading(progress: progress.fractionCompleted)
+                    }
+                )
+            }
 
             modelState = .loading
 
-            whisperKit = try await WhisperKit(
-                modelFolder: modelFolder.path,
-                download: false
-            )
+            whisperKit = try await timed(name: "whisper.modelLoad", metadata: variantMetadata) {
+                try await WhisperKit(
+                    modelFolder: modelFolder.path,
+                    download: false
+                )
+            }
 
             modelState = .ready
         } catch {
@@ -54,10 +66,18 @@ final class TranscriptionService: TranscriptionClient {
         let startTime = Date()
         let results = try await whisperKit.transcribe(audioPath: audioURL.path)
         let duration = Int(Date().timeIntervalSince(startTime) * 1000)
+        recorder?.record(name: "whisper.transcribe", durationMs: duration, metadata: ["variant": Self.modelVariant])
 
         let text = results.map(\.text).joined(separator: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return (text, duration)
+    }
+
+    private func timed<T>(name: String, metadata: [String: String]?, _ block: () async throws -> T) async throws -> T {
+        if let recorder {
+            return try await recorder.time(name: name, metadata: metadata, block)
+        }
+        return try await block()
     }
 }
 

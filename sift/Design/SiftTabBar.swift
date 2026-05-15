@@ -2,6 +2,9 @@ import SwiftUI
 
 enum SiftTab {
     case today, history, privacy
+    #if DEBUG
+    case debug
+    #endif
 }
 
 struct SiftTabBar: View {
@@ -12,6 +15,9 @@ struct SiftTabBar: View {
             tabItem(.today,   label: "Today",   icon: todayIcon,   accessLabel: "Record")
             tabItem(.history, label: "History", icon: historyIcon, accessLabel: "History")
             tabItem(.privacy, label: "Privacy", icon: privacyIcon, accessLabel: "Privacy")
+            #if DEBUG
+            tabItem(.debug, label: "Debug", icon: debugIcon, accessLabel: "Debug")
+            #endif
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 6)
@@ -35,8 +41,7 @@ struct SiftTabBar: View {
                 icon
                     .frame(width: 22, height: 22)
                 Text(label)
-                    .font(SiftFont.pill)
-                    .fontWeight(isActive ? .semibold : .medium)
+                    .font(isActive ? SiftFont.pillSemibold : SiftFont.pill)
                     .tracking(0.1)
             }
             .frame(maxWidth: .infinity)
@@ -107,4 +112,29 @@ struct SiftTabBar: View {
             )
         }
     }
+
+    #if DEBUG
+    private var debugIcon: some View {
+        Canvas { ctx, size in
+            let stroke = ctx
+            stroke.stroke(
+                Path { p in
+                    p.addEllipse(in: CGRect(x: 6, y: 6, width: 10, height: 12))
+                    p.move(to: CGPoint(x: 11, y: 4))
+                    p.addLine(to: CGPoint(x: 11, y: 7))
+                    p.move(to: CGPoint(x: 4, y: 10))
+                    p.addLine(to: CGPoint(x: 6, y: 10))
+                    p.move(to: CGPoint(x: 16, y: 10))
+                    p.addLine(to: CGPoint(x: 18, y: 10))
+                    p.move(to: CGPoint(x: 4, y: 14))
+                    p.addLine(to: CGPoint(x: 6, y: 14))
+                    p.move(to: CGPoint(x: 16, y: 14))
+                    p.addLine(to: CGPoint(x: 18, y: 14))
+                },
+                with: .foreground,
+                style: StrokeStyle(lineWidth: 1.4, lineCap: .round)
+            )
+        }
+    }
+    #endif
 }

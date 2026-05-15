@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension Color {
     init(hex: UInt32, opacity: Double = 1) {
@@ -40,13 +41,26 @@ enum SiftSpace {
 }
 
 enum SiftFont {
-    static let display  = Font.custom("Figtree", size: 30).weight(.semibold)
-    static let title    = Font.custom("Figtree", size: 22).weight(.semibold)
-    static let heading  = Font.custom("Figtree", size: 17).weight(.semibold)
-    static let body     = Font.custom("Figtree", size: 14).weight(.regular)
-    static let caption  = Font.custom("Figtree", size: 12).weight(.medium)
-    static let eyebrow  = Font.custom("Figtree", size: 11).weight(.semibold)
-    static let pill     = Font.custom("Figtree", size: 10.5).weight(.medium)
-    static let nameBold = Font.custom("Figtree", size: 15).weight(.semibold)
-    static let summary  = Font.custom("Figtree", size: 12.5).weight(.regular)
+    static let display     = figtree(size: 30,   wght: 600)
+    static let title       = figtree(size: 22,   wght: 600)
+    static let heading     = figtree(size: 17,   wght: 600)
+    static let body        = figtree(size: 14,   wght: 400)
+    static let bodyMedium  = figtree(size: 14,   wght: 500)
+    static let bodySemibold = figtree(size: 14,  wght: 600)
+    static let caption     = figtree(size: 12,   wght: 500)
+    static let eyebrow     = figtree(size: 11,   wght: 600)
+    static let pill        = figtree(size: 10.5, wght: 500)
+    static let pillSemibold = figtree(size: 10.5, wght: 600)
+    static let nameBold    = figtree(size: 15,   wght: 600)
+    static let summary     = figtree(size: 12.5, wght: 400)
+
+    // Uses CoreText wght axis directly to avoid SwiftUI's broken weight resolution for variable fonts.
+    static func figtree(size: CGFloat, wght: CGFloat) -> Font {
+        let variationKey = UIFontDescriptor.AttributeName(rawValue: "CTFontVariationAttribute")
+        let descriptor = UIFontDescriptor(fontAttributes: [
+            .name: "Figtree",
+            variationKey: [2003265652 as NSNumber: wght as NSNumber]  // 0x77676874 = 'wght'
+        ])
+        return Font(UIFont(descriptor: descriptor, size: size))
+    }
 }

@@ -33,14 +33,24 @@ final class SwiftDataSessionStore: SessionStore {
     private static let helpfulRecommendationHistoryLimit = 10
 
     private let modelContext: ModelContext
+    private let recorder: MetricRecorder?
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, recorder: MetricRecorder? = nil) {
         self.modelContext = modelContext
+        self.recorder = recorder
     }
 
     func recommendationHistory() throws -> [SessionHistoryEntry] {
-        let descriptor = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
-        let sessions = try modelContext.fetch(descriptor)
+        let sessions: [Session]
+        if let recorder {
+            sessions = try recorder.timeSync(name: "swiftdata.historyFetch") {
+                let descriptor = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+                return try modelContext.fetch(descriptor)
+            }
+        } else {
+            let descriptor = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+            sessions = try modelContext.fetch(descriptor)
+        }
         let selectedSessions = selectRecommendationHistory(from: sessions)
 
         return selectedSessions.map { session in
@@ -76,8 +86,15 @@ final class SwiftDataSessionStore: SessionStore {
     }
 
     func save(_ session: Session) throws {
-        modelContext.insert(session)
-        try modelContext.save()
+        if let recorder {
+            try recorder.timeSync(name: "swiftdata.sessionSave") {
+                modelContext.insert(session)
+                try modelContext.save()
+            }
+        } else {
+            modelContext.insert(session)
+            try modelContext.save()
+        }
     }
 
     func delete(_ sessions: [Session]) throws {

@@ -5,7 +5,7 @@ import SwiftData
 enum TestHelpers {
     @MainActor
     static func makeContainer() throws -> ModelContainer {
-        let schema = Schema([Session.self, PracticeAttempt.self])
+        let schema = Schema([Session.self, PracticeAttempt.self, MetricEvent.self])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: config)
     }
