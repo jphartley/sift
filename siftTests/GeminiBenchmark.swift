@@ -1,6 +1,6 @@
-// To enable: set GEMINI_API_KEY in the scheme's environment (Edit Scheme → Test → Arguments → Environment Variables).
-// Each iteration consumes Gemini API credits. Run with `xcodebuild test` against the iPhone 17 Pro simulator
-// with the env var present, or via the Test navigator in Xcode.
+// Run via scripts/run-benchmark.sh. Reads the API key from sift/Services/GeminiAPIKey.local
+// (the same gitignored file the app uses — no extra setup needed).
+// Skips automatically if the file is absent or empty.
 //
 // Output lines prefixed with "BENCHMARK" are emitted to standard output, parseable by tooling.
 
@@ -19,12 +19,12 @@ struct GeminiBenchmark {
     ]
 
     @Test(
-        .disabled(if: ProcessInfo.processInfo.environment["GEMINI_API_KEY"] == nil,
-                  "Set GEMINI_API_KEY in scheme env to run benchmark"),
-        arguments: 1...10
+        .disabled(if: Secrets.geminiApiKey.isEmpty,
+                  "Add API key to sift/Services/GeminiAPIKey.local to run benchmark"),
+        arguments: 1...20
     )
     func benchmarkGeminiRecommend(iteration: Int) async throws {
-        let apiKey = try #require(ProcessInfo.processInfo.environment["GEMINI_API_KEY"])
+        let apiKey = Secrets.geminiApiKey
 
         let transcript = Self.fixtureTranscripts[(iteration - 1) % Self.fixtureTranscripts.count]
 
