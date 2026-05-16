@@ -55,6 +55,7 @@ sift/
   Models/
     Session.swift         — @Model: one voice check-in, transcript + audio/transcription durations + geminiRationale/geminiModelUsed/geminiConfidence + cascade-delete attempts relationship
     PracticeAttempt.swift — @Model: one practice trial, linked to session, with helpfulness rating
+    MetricEvent.swift     — metric event model for internal instrumentation
     PracticeLibrary.swift — Practice struct + YAML-backed richer practice library loader
   Services/
     CheckInServices.swift      — Protocol boundaries for audio recording, transcription, recommendations, and session persistence/history/delete; includes SwiftDataSessionStore
@@ -64,11 +65,14 @@ sift/
     GeminiPromptBuilder.swift   — Builds prompts from transcript + library + user history
     GeminiRecommendationParser.swift — Decodes and validates structured Gemini JSON responses
     GeminiRecommendationRouter.swift — GoogleGenerativeAI request boundary + Flash/Pro routing + retry classification
+    MetricRecorder.swift        — internal metric/event recorder
     Secrets.swift               — Checked-in safe Gemini API key fallback; reads bundled ignored GeminiAPIKey.local at runtime
     GeminiAPIKey.local.example  — Template for ignored local Gemini API key text file
   ViewModels/
     RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/preparingToRecord/recording/transcribing/analyzing/suggesting/practicing/reflecting/error)
     HistoryViewModel.swift      — history deletion state owner, routes deletes through SessionStore and surfaces delete failures
+    ReflectionViewModel.swift   — reflection flow state and persistence helpers
+    CheckInRecoveryPresentation.swift — recovery copy/state after interrupted or failed check-ins
   Views/
     RecordingScreen.swift       — first-time setup copy, record button, audio level meter, delegates to flow views, tears down in-flight check-in work on disappearance
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
@@ -77,6 +81,15 @@ sift/
     ReflectionView.swift        — helpfulness thumbs up/down → optional notes → save/skip
     HistoryScreen.swift         — SwiftData @Query list of past sessions, swipe to delete via HistoryViewModel
     SessionDetailView.swift     — full transcript + practice attempts with helpfulness ratings + Gemini metadata
+    PrivacyScreen.swift         — privacy/trust surface for app behavior and data handling
+    DebugMetricsScreen.swift    — internal metrics/debug surface
+    HistoryGrouping.swift       — shared grouping logic for history presentation
+  Design/
+    SiftTokens.swift            — shared spacing/color/typography tokens
+    SiftComponents.swift       — reusable SwiftUI components
+    SiftTabBar.swift            — custom tab bar styling
+    WaveformRibbon.swift       — recording waveform visual
+    CategoryIcon.swift         — practice category iconography
 siftTests/
     TestHelpers.swift                      — in-memory SwiftData container factory
     ProjectMetadataTests.swift             — Xcode project metadata and startup checks for beta-facing app name, microphone permission copy, version values, and storage preparation
@@ -89,14 +102,21 @@ siftTests/
       RecordingStateTests.swift            — enum equality for all cases
       RecordingViewModelTests.swift        — fake-backed check-in flow, persistence, retry, async cancellation, and failure-path tests
       HistoryViewModelTests.swift          — fake-backed history deletion success and failure-path tests
+      RecordingScreenRecoveryTests.swift   — recovery presentation coverage
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality
       GeminiServiceTests.swift             — recommendation data/error basics + safe secret fallback behavior
       GeminiPromptBuilderTests.swift       — prompt construction
       GeminiRecommendationParserTests.swift — structured response parsing and validation
       GeminiRecommendationRouterTests.swift — Flash/Pro routing + retryable error detection
+      MetricRecorderTests.swift            — metric recorder behavior
+      GeminiLoggingTests.swift             — logging and redaction coverage
     Views/
       SuggestionViewContentTests.swift      — suggestion explanation copy and hidden model-routing details
+      PrivacyContentTests.swift            — privacy screen copy and presentation
+      HistoryGroupingTests.swift           — history grouping behavior
+      HistoryRowPresentationTests.swift    — history row presentation details
+      RecordingScreenOrientationTests.swift — recording screen layout/orientation behavior
 siftUITests/
     siftUITests.swift                      — app launch + tab navigation smoke test
 ```
