@@ -2,7 +2,12 @@ import Foundation
 import GoogleGenerativeAI
 
 protocol GeminiModelRequesting: AnyObject {
-    func request(prompt: String, apiKey: String, modelName: String) async throws -> String
+    func request(
+        prompt: String,
+        apiKey: String,
+        modelName: String,
+        experiments: AnalysisLatencyExperimentSnapshot
+    ) async throws -> String
 }
 
 struct GeminiRetryPolicy {
@@ -38,40 +43,57 @@ struct GeminiRecommendationRouter {
         self.recorder = recorder
     }
 
-    func recommend(prompt: String, apiKey: String) async throws -> RecommendationResult {
+    func recommend(
+        prompt: String,
+        apiKey: String,
+        experiments: AnalysisLatencyExperimentSnapshot = .baseline
+    ) async throws -> RecommendationResult {
         do {
-            let flashText = try await timed(name: "gemini.flash", metadata: ["model": Self.flashModel]) {
+            let flashModelName = experiments.flashModelName
+            let flashMetadata = ["model": flashModelName].merging(experiments.metricMetadata) { _, new in new }
+            let flashText = try await timed(name: "gemini.flash", metadata: flashMetadata) {
                 try await requester.request(
                     prompt: prompt,
                     apiKey: apiKey,
-                    modelName: Self.flashModel
+                    modelName: flashModelName,
+                    experiments: experiments
                 )
             }
             let flashResult = try parser.parse(
                 text: flashText,
-                modelUsed: Self.flashModel,
+                modelUsed: flashModelName,
                 wasEscalated: false
             )
-            if flashResult.confidence >= Self.confidenceThreshold {
+            if experiments.escalationDisabled {
                 return flashResult
             }
-            logger("[GeminiService] Confidence \(flashResult.confidence) below threshold \(Self.confidenceThreshold), escalating to Pro")
-            return try await requestPro(prompt: prompt, apiKey: apiKey, reason: "low_confidence")
+            if flashResult.confidence >= experiments.confidenceThreshold.rawValue {
+                return flashResult
+            }
+            logger("[GeminiService] Confidence \(flashResult.confidence) below threshold \(experiments.confidenceThreshold.rawValue), escalating to Pro")
+            return try await requestPro(prompt: prompt, apiKey: apiKey, reason: "low_confidence", experiments: experiments)
         } catch {
             if retryPolicy.isRetryableServerError(error) {
                 logger("[GeminiService] Flash failed with server error, falling back to Pro")
-                return try await requestPro(prompt: prompt, apiKey: apiKey, reason: "server_error")
+                return try await requestPro(prompt: prompt, apiKey: apiKey, reason: "server_error", experiments: experiments)
             }
             throw error
         }
     }
 
-    private func requestPro(prompt: String, apiKey: String, reason: String) async throws -> RecommendationResult {
-        let proText = try await timed(name: "gemini.pro", metadata: ["model": Self.proModel, "reason": reason]) {
+    private func requestPro(
+        prompt: String,
+        apiKey: String,
+        reason: String,
+        experiments: AnalysisLatencyExperimentSnapshot
+    ) async throws -> RecommendationResult {
+        let proMetadata = ["model": Self.proModel, "reason": reason].merging(experiments.metricMetadata) { _, new in new }
+        let proText = try await timed(name: "gemini.pro", metadata: proMetadata) {
             try await requester.request(
                 prompt: prompt,
                 apiKey: apiKey,
-                modelName: Self.proModel
+                modelName: Self.proModel,
+                experiments: experiments
             )
         }
         return try parser.parse(
@@ -90,8 +112,13 @@ struct GeminiRecommendationRouter {
 }
 
 final class LiveGeminiModelRequester: GeminiModelRequesting {
-    func request(prompt: String, apiKey: String, modelName: String) async throws -> String {
-        let model = makeModel(name: modelName, apiKey: apiKey)
+    func request(
+        prompt: String,
+        apiKey: String,
+        modelName: String,
+        experiments: AnalysisLatencyExperimentSnapshot
+    ) async throws -> String {
+        let model = makeModel(name: modelName, apiKey: apiKey, experiments: experiments)
         let response: GenerateContentResponse
         do {
             response = try await model.generateContent(prompt)
@@ -119,17 +146,32 @@ final class LiveGeminiModelRequester: GeminiModelRequesting {
         return text
     }
 
-    private func makeModel(name: String, apiKey: String) -> GenerativeModel {
+    private func makeModel(
+        name: String,
+        apiKey: String,
+        experiments: AnalysisLatencyExperimentSnapshot
+    ) -> GenerativeModel {
         GenerativeModel(
             name: name,
             apiKey: apiKey,
-            generationConfig: makeGenerationConfig(),
+            generationConfig: makeGenerationConfig(experiments: experiments),
             systemInstruction: systemInstruction
         )
     }
 
-    private func makeGenerationConfig() -> GenerationConfig {
-        let responseSchema = Schema(
+    private func makeGenerationConfig(experiments: AnalysisLatencyExperimentSnapshot) -> GenerationConfig {
+        let generationProfile = experiments.generationProfile
+        let responseSchema = generationProfile.responseSchemaIsStrict ? makeResponseSchema() : nil
+        return GenerationConfig(
+            temperature: 0.3,
+            maxOutputTokens: generationProfile.maxOutputTokens,
+            responseMIMEType: generationProfile.responseMIMEType,
+            responseSchema: responseSchema
+        )
+    }
+
+    private func makeResponseSchema() -> Schema {
+        Schema(
             type: .object,
             properties: [
                 "rationale": Schema(
@@ -160,13 +202,6 @@ final class LiveGeminiModelRequester: GeminiModelRequesting {
                 ),
             ],
             requiredProperties: ["rationale", "practices", "confidence"]
-        )
-
-        return GenerationConfig(
-            temperature: 0.3,
-            maxOutputTokens: 4096,
-            responseMIMEType: "application/json",
-            responseSchema: responseSchema
         )
     }
 

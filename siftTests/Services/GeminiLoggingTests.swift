@@ -101,7 +101,12 @@ private final class FakeRequester: GeminiModelRequesting {
         self.responses = responses.compactMapValues { $0 }
     }
 
-    func request(prompt: String, apiKey: String, modelName: String) async throws -> String {
+    func request(
+        prompt: String,
+        apiKey: String,
+        modelName: String,
+        experiments: AnalysisLatencyExperimentSnapshot
+    ) async throws -> String {
         if let response = responses[modelName] {
             return response
         }

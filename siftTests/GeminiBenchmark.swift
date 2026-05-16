@@ -25,6 +25,7 @@ struct GeminiBenchmark {
     )
     func benchmarkGeminiRecommend(iteration: Int) async throws {
         let apiKey = Secrets.geminiApiKey
+        let experiments = AnalysisLatencyExperimentStore()
 
         let transcript = Self.fixtureTranscripts[(iteration - 1) % Self.fixtureTranscripts.count]
 
@@ -33,7 +34,8 @@ struct GeminiBenchmark {
             router: GeminiRecommendationRouter(requester: LiveGeminiModelRequester(), recorder: nil),
             apiKeyProvider: { apiKey },
             logger: { _ in },
-            recorder: nil
+            recorder: nil,
+            experimentStore: experiments
         )
 
         let start = Date()
@@ -41,6 +43,7 @@ struct GeminiBenchmark {
         let ms = Int(Date().timeIntervalSince(start) * 1000)
 
         let confidence = String(format: "%.2f", result.confidence)
-        print("BENCHMARK iter=\(iteration) ms=\(ms) model=\(result.modelUsed) conf=\(confidence) escalated=\(result.wasEscalated)")
+        let labels = experiments.activeLabels.isEmpty ? "baseline" : experiments.activeLabels.joined(separator: "|")
+        print("BENCHMARK iter=\(iteration) ms=\(ms) model=\(result.modelUsed) conf=\(confidence) escalated=\(result.wasEscalated) experiments=\(labels)")
     }
 }

@@ -16,6 +16,7 @@ enum AppStoragePreparation {
 struct siftApp: App {
     let container: ModelContainer
     let metricRecorder: MetricRecorder
+    let experimentStore: AnalysisLatencyExperimentStore
     @State private var transcriptionService: TranscriptionService
     @State private var geminiService: GeminiService
     @State private var audioRecorderService: AudioRecorderService
@@ -30,12 +31,14 @@ struct siftApp: App {
         }
         self.container = resolvedContainer
         let recorder = MetricRecorder(modelContext: ModelContext(resolvedContainer))
+        let experiments = AnalysisLatencyExperimentStore()
         self.metricRecorder = recorder
+        self.experimentStore = experiments
         recorder.timeSync(name: "practiceLibrary.load") {
             _ = Practice.all
         }
         _transcriptionService = State(initialValue: TranscriptionService(recorder: recorder))
-        _geminiService = State(initialValue: GeminiService(recorder: recorder))
+        _geminiService = State(initialValue: GeminiService(recorder: recorder, experimentStore: experiments))
         _audioRecorderService = State(initialValue: AudioRecorderService(metricRecorder: recorder))
     }
 
@@ -49,6 +52,7 @@ struct siftApp: App {
                 .environment(geminiService)
                 .environment(audioRecorderService)
                 .environment(metricRecorder)
+                .environment(experimentStore)
         }
         .modelContainer(container)
     }

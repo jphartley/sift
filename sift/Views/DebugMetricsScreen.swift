@@ -2,10 +2,36 @@
 import SwiftUI
 import SwiftData
 
+enum DebugMetricsFiltering {
+    static let allLabel = "All"
+
+    static func filteredEvents(_ events: [MetricEvent], by experimentLabel: String) -> [MetricEvent] {
+        guard experimentLabel != allLabel else { return events }
+        return events.filter { $0.analysisLatencyExperimentLabels.contains(experimentLabel) }
+    }
+
+    static func availableExperimentLabels(from events: [MetricEvent]) -> [String] {
+        Array(Set(events.flatMap(\.analysisLatencyExperimentLabels))).sorted()
+    }
+
+    static func normalizedSelection(_ selection: String, availableLabels: [String]) -> String {
+        selection == allLabel || availableLabels.contains(selection) ? selection : allLabel
+    }
+}
+
+enum DebugExperimentPresentation {
+    static func statusText(for activeLabels: [String]) -> String {
+        activeLabels.isEmpty ? "Baseline" : "\(activeLabels.count) active"
+    }
+}
+
 struct DebugMetricsScreen: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(AnalysisLatencyExperimentStore.self) private var experimentStore
     @Query(sort: \MetricEvent.timestamp, order: .reverse) private var events: [MetricEvent]
     @State private var showClearConfirmation = false
+    @State private var showExperimentConfiguration = false
+    @State private var selectedExperimentLabel = DebugMetricsFiltering.allLabel
 
     var body: some View {
         NavigationStack {
@@ -37,14 +63,10 @@ struct DebugMetricsScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if events.isEmpty {
-            emptyState
-        } else {
-            summaryList
-        }
+        summaryList
     }
 
-    private var emptyState: some View {
+    private var emptyMetricsMessage: some View {
         VStack(spacing: 12) {
             Text("No metrics recorded yet")
                 .font(.headline)
@@ -54,29 +76,67 @@ struct DebugMetricsScreen: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
     }
 
     private var summaryList: some View {
         List {
             Section {
-                EscalationPill(events: events)
+                ExperimentStatusRow(
+                    activeLabels: experimentStore.activeLabels,
+                    configureAction: { showExperimentConfiguration = true }
+                )
             }
-            Section("Per-metric") {
-                ForEach(metricSummaries, id: \.name) { summary in
-                    NavigationLink(value: summary.name) {
-                        MetricSummaryRow(summary: summary)
+
+            if events.isEmpty {
+                Section {
+                    emptyMetricsMessage
+                }
+            } else {
+                Section {
+                    EscalationPill(events: filteredEvents)
+                }
+                Section("Per-metric") {
+                    filterPicker
+                    if metricSummaries.isEmpty {
+                        Text("No metrics match this label")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(metricSummaries, id: \.name) { summary in
+                            NavigationLink(value: summary.name) {
+                                MetricSummaryRow(summary: summary)
+                            }
+                        }
                     }
                 }
             }
         }
+        .contentMargins(.bottom, 112, for: .scrollContent)
         .navigationDestination(for: String.self) { name in
-            MetricDetailView(metricName: name)
+            MetricDetailView(
+                metricName: name,
+                experimentLabelFilter: selectedExperimentLabel == DebugMetricsFiltering.allLabel ? nil : selectedExperimentLabel
+            )
+        }
+        .sheet(isPresented: $showExperimentConfiguration) {
+            ExperimentConfigurationSheet()
+        }
+        .onChange(of: availableExperimentLabels) { _, labels in
+            selectedExperimentLabel = DebugMetricsFiltering.normalizedSelection(
+                selectedExperimentLabel,
+                availableLabels: labels
+            )
         }
     }
 
+    private var filteredEvents: [MetricEvent] {
+        DebugMetricsFiltering.filteredEvents(events, by: selectedExperimentLabel)
+    }
+
     private var metricSummaries: [MetricSummary] {
-        let grouped = Dictionary(grouping: events, by: \.name)
+        let grouped = Dictionary(grouping: filteredEvents, by: \.name)
         return grouped
             .map { name, events in
                 MetricSummary(name: name, events: events)
@@ -84,11 +144,125 @@ struct DebugMetricsScreen: View {
             .sorted { $0.name < $1.name }
     }
 
+    private var availableExperimentLabels: [String] {
+        DebugMetricsFiltering.availableExperimentLabels(from: events)
+    }
+
+    @ViewBuilder
+    private var filterPicker: some View {
+        Picker("Filter by label", selection: $selectedExperimentLabel) {
+            Text(DebugMetricsFiltering.allLabel).tag(DebugMetricsFiltering.allLabel)
+            ForEach(availableExperimentLabels, id: \.self) { label in
+                Text(label).tag(label)
+            }
+        }
+        .pickerStyle(.menu)
+    }
+
     private func clearAllMetrics() {
         for event in events {
             modelContext.delete(event)
         }
         try? modelContext.save()
+    }
+}
+
+struct ExperimentStatusRow: View {
+    let activeLabels: [String]
+    let configureAction: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Experiments")
+                        .font(.subheadline.weight(.medium))
+                    Text(DebugExperimentPresentation.statusText(for: activeLabels))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(action: configureAction) {
+                    Label("Configure", systemImage: "slider.horizontal.3")
+                }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+            }
+
+            if activeLabels.isEmpty {
+                PillTag(text: "baseline", tone: .soft)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(activeLabels, id: \.self) { label in
+                            PillTag(text: label, tone: .soft)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct ExperimentConfigurationSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AnalysisLatencyExperimentStore.self) private var experimentStore
+
+    var body: some View {
+        NavigationStack {
+            List {
+                experimentControls
+            }
+            .navigationTitle("Experiments")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var experimentControls: some View {
+        @Bindable var experimentStore = experimentStore
+
+        Section("Model") {
+            Picker("Flash model", selection: $experimentStore.flashModelVariant) {
+                ForEach(FlashModelVariant.allCases) { variant in
+                    Text(variant.displayName).tag(variant)
+                }
+            }
+            Picker("Response schema", selection: $experimentStore.responseSchemaMode) {
+                ForEach(ResponseSchemaMode.allCases) { mode in
+                    Text(mode.rawValue.capitalized).tag(mode)
+                }
+            }
+            Picker("Output tokens", selection: $experimentStore.outputTokenBudget) {
+                ForEach(OutputTokenBudget.allCases) { budget in
+                    Text("\(budget.rawValue)").tag(budget)
+                }
+            }
+        }
+
+        Section("Routing") {
+            Picker("Confidence threshold", selection: $experimentStore.confidenceThreshold) {
+                ForEach(ConfidenceThreshold.allCases) { threshold in
+                    Text(String(format: "%.1f", threshold.rawValue)).tag(threshold)
+                }
+            }
+            Toggle("Disable escalation", isOn: $experimentStore.escalationDisabled)
+        }
+
+        Section("Context and execution") {
+            Toggle("Trim prompt context", isOn: $experimentStore.promptContextTrimmingEnabled)
+            Toggle("Enable cache experiment", isOn: $experimentStore.contextCachingEnabled)
+            Toggle("Enable speculative parallel", isOn: $experimentStore.speculativeParallelEnabled)
+            Toggle("Enable streaming", isOn: $experimentStore.streamingEnabled)
+        }
     }
 }
 
@@ -177,25 +351,41 @@ struct EscalationPill: View {
 
 struct MetricDetailView: View {
     let metricName: String
+    let experimentLabelFilter: String?
     @Query private var events: [MetricEvent]
 
-    init(metricName: String) {
+    init(metricName: String, experimentLabelFilter: String? = nil) {
         self.metricName = metricName
+        self.experimentLabelFilter = experimentLabelFilter
         let predicate = #Predicate<MetricEvent> { $0.name == metricName }
         _events = Query(filter: predicate, sort: \MetricEvent.timestamp, order: .reverse)
     }
 
+    private var filteredEvents: [MetricEvent] {
+        guard let experimentLabelFilter else { return events }
+        return events.filter { $0.analysisLatencyExperimentLabels.contains(experimentLabelFilter) }
+    }
+
     private var p95Threshold: Int {
-        let sorted = events.map(\.durationMs).sorted()
+        let sorted = filteredEvents.map(\.durationMs).sorted()
         return MetricStats.percentile(sorted, percentile: 0.95)
     }
 
     var body: some View {
         List {
-            ForEach(events) { event in
-                EventRow(event: event, p95Threshold: p95Threshold)
+            if let experimentLabelFilter {
+                Section("Filtered by \(experimentLabelFilter)") {
+                    ForEach(filteredEvents) { event in
+                        EventRow(event: event, p95Threshold: p95Threshold)
+                    }
+                }
+            } else {
+                ForEach(filteredEvents) { event in
+                    EventRow(event: event, p95Threshold: p95Threshold)
+                }
             }
         }
+        .contentMargins(.bottom, 112, for: .scrollContent)
         .navigationTitle(metricName)
         .navigationBarTitleDisplayMode(.inline)
     }

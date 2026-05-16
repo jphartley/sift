@@ -98,7 +98,7 @@ Each hypothesis lists the diagnostic signal that confirms or rejects it.
 ### H2. Preview-endpoint latency overhead (MEDIUM-HIGH)
 **Claim:** Both models are `-preview` variants, which often have lower priority and higher latency than GA endpoints.
 **Confirmed by:** `gemini.flash` p50 > 4s in isolation (no escalation), high variance run-to-run.
-**Cost to investigate:** swap to GA model name in a branch, re-run benchmark. ~30 min.
+**Cost to investigate:** swap to a stable Flash model in a branch, re-run benchmark. ~30 min.
 **If confirmed:** see Experiment E3.
 
 ### H3. Structured-output schema overhead (MEDIUM)
@@ -139,7 +139,7 @@ Each experiment is a small, isolated change designed to test one hypothesis. Run
 |----|----|----|----|----|
 | **E1** | Threshold | `confidenceThreshold: 0.7 → 0.5` | Fewer escalations → big total drop on bimodal cases | Some "low confidence" recs ship without Pro reviewing |
 | **E2** | No escalation | Always trust Flash, never call Pro | Eliminates Pro tail entirely | Worst case for quality on hard sessions |
-| **E3** | GA model | `gemini-3-flash-preview` → current GA flash | Per-call latency, possibly large | Different model behavior, may need prompt tweaks |
+| **E3** | Stable model | `gemini-3-flash-preview` → `gemini-2.5-flash` | Per-call latency, possibly large | Different model behavior, may need prompt tweaks |
 | **E4** | No schema | Drop `responseSchema`, parse JSON loosely | Per-call latency on Gemini side | Parser becomes more lenient; schema drift risk |
 | **E5** | Trim library | Send top-K practices (keyword/embedding) instead of all | Prompt size / TTFT | Wrong practices not even considered |
 | **E6** | Reduce `maxOutputTokens` | 4096 → 1024 | Per-call latency (less to generate) | Truncation if rationale runs long |
@@ -156,7 +156,7 @@ This section is the heart of the doc. When the metric history is in front of you
 
 1. **If escalation rate > 30%:** Run **E1** first (lower threshold). Cheapest possible change. If recommendation quality holds, ship and re-measure. If it tanks, try **E2** with a quality-conscious eye, or accept escalations and look at **E9** (parallel speculative).
 
-2. **If escalation rate < 10% AND Flash p50 > 5s:** Escalation isn't the issue. Run **E3** (GA model) and **E4** (no schema) as a 2x2 in the harness. The faster combo wins. If both fail to move latency, the bottleneck is genuinely on Gemini's side and we should look at **E7** (streaming) for perceived-latency improvement.
+2. **If escalation rate < 10% AND Flash p50 > 5s:** Escalation isn't the issue. Run **E3** (stable model) and **E4** (no schema) as a 2x2 in the harness. The faster combo wins. If both fail to move latency, the bottleneck is genuinely on Gemini's side and we should look at **E7** (streaming) for perceived-latency improvement.
 
 3. **If Flash latency is fine (p50 < 3s) but variance is huge (p95 > 12s):** Server-side variance. Limited options. **E7** (streaming) is the right user-facing fix; **E9** (parallel speculative) helps if escalation is involved in the slow tail.
 

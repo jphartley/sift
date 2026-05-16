@@ -114,7 +114,12 @@ struct GeminiServiceTests {
 private final class TrackingGeminiRequester: GeminiModelRequesting {
     var didRequest = false
 
-    func request(prompt: String, apiKey: String, modelName: String) async throws -> String {
+    func request(
+        prompt: String,
+        apiKey: String,
+        modelName: String,
+        experiments: AnalysisLatencyExperimentSnapshot
+    ) async throws -> String {
         didRequest = true
         return "{}"
     }

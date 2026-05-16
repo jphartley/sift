@@ -75,6 +75,50 @@ struct GeminiRecommendationRouterTests {
         #expect(requester.requestedModels == [GeminiRecommendationRouter.flashModel])
     }
 
+    @Test func stableFlashModelVariantUsesAlternateFlashModelName() async throws {
+        let requester = FakeGeminiModelRequester(responses: [
+            FlashModelVariant.stable.modelName: .success(responseJSON(confidence: 0.9))
+        ])
+        let router = GeminiRecommendationRouter(requester: requester)
+        var experiments = AnalysisLatencyExperimentSnapshot.baseline
+        experiments.flashModelVariant = .stable
+
+        let result = try await router.recommend(prompt: "prompt", apiKey: "key", experiments: experiments)
+
+        #expect(result.modelUsed == FlashModelVariant.stable.modelName)
+        #expect(requester.requestedModels == [FlashModelVariant.stable.modelName])
+    }
+
+    @Test func lowConfidenceCanBeIgnoredWhenEscalationIsDisabled() async throws {
+        let requester = FakeGeminiModelRequester(responses: [
+            GeminiRecommendationRouter.flashModel: .success(responseJSON(confidence: 0.2)),
+            GeminiRecommendationRouter.proModel: .success(responseJSON(confidence: 0.9))
+        ])
+        let router = GeminiRecommendationRouter(requester: requester)
+        var experiments = AnalysisLatencyExperimentSnapshot.baseline
+        experiments.escalationDisabled = true
+
+        let result = try await router.recommend(prompt: "prompt", apiKey: "key", experiments: experiments)
+
+        #expect(!result.wasEscalated)
+        #expect(requester.requestedModels == [GeminiRecommendationRouter.flashModel])
+    }
+
+    @Test func lowerThresholdCanPreventEscalation() async throws {
+        let requester = FakeGeminiModelRequester(responses: [
+            GeminiRecommendationRouter.flashModel: .success(responseJSON(confidence: 0.6))
+        ])
+        let router = GeminiRecommendationRouter(requester: requester)
+        var experiments = AnalysisLatencyExperimentSnapshot.baseline
+        experiments.confidenceThreshold = .reduced
+
+        let result = try await router.recommend(prompt: "prompt", apiKey: "key", experiments: experiments)
+
+        #expect(!result.wasEscalated)
+        #expect(result.modelUsed == GeminiRecommendationRouter.flashModel)
+        #expect(requester.requestedModels == [GeminiRecommendationRouter.flashModel])
+    }
+
     @Test func retryableFlashFailureFallsBackToPro() async throws {
         let requester = FakeGeminiModelRequester(responses: [
             GeminiRecommendationRouter.flashModel: .failure(testError("HTTP 503: unavailable")),
@@ -172,7 +216,12 @@ private final class FakeGeminiModelRequester: GeminiModelRequesting {
         self.responses = responses
     }
 
-    func request(prompt: String, apiKey: String, modelName: String) async throws -> String {
+    func request(
+        prompt: String,
+        apiKey: String,
+        modelName: String,
+        experiments: AnalysisLatencyExperimentSnapshot
+    ) async throws -> String {
         requestedModels.append(modelName)
         switch responses[modelName] {
         case .success(let text):

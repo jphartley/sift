@@ -172,4 +172,24 @@ struct GeminiPromptBuilderTests {
         #expect(prompt.contains("Current Check-In"))
         #expect(!prompt.isEmpty)
     }
+
+    @Test func trimmedPromptUsesSmallerContext() {
+        let builder = GeminiPromptBuilder(practices: Array(repeating: Practice.all[0], count: 30))
+        let history = (0..<10).map { index in
+            SessionHistoryEntry(
+                timestamp: Date(timeIntervalSince1970: TimeInterval(index)),
+                transcript: "Entry \(index)",
+                practiceName: "Box Breathing",
+                wasHelpful: true
+            )
+        }
+        var snapshot = AnalysisLatencyExperimentSnapshot.baseline
+        snapshot.promptContextTrimmingEnabled = true
+
+        let prompt = builder.buildPrompt(transcript: "test", history: history, experiments: snapshot)
+
+        #expect(prompt.contains("Entry 0"))
+        #expect(prompt.contains("Entry 4"))
+        #expect(!prompt.contains("Entry 5"))
+    }
 }
