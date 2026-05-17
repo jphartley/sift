@@ -9,6 +9,7 @@ struct GeminiPromptBuilder {
     func buildPrompt(
         transcript: String,
         history: [SessionHistoryEntry],
+        profile: UserPracticeProfile? = nil,
         experiments: AnalysisLatencyExperimentSnapshot = .baseline
     ) -> String {
         var parts: [String] = []
@@ -22,9 +23,60 @@ struct GeminiPromptBuilder {
         parts.append("## Practice Library")
         parts.append("")
         for practice in practicesToUse {
-            let labels = practice.labels.joined(separator: ", ")
             let bestFor = practice.bestFor.joined(separator: "; ")
-            parts.append("- **\(practice.name)** (id: `\(practice.id)`, category: \(practice.category), ~\(practice.durationMinutes)m, intensity: \(practice.intensity), labels: \(labels)): \(practice.summary) Best for: \(bestFor).")
+            let evidence = practice.evidence.researchBacked ? "evidence:yes" : "evidence:no"
+            var traits = [practice.matching.worldview]
+            if practice.matching.bodyFocused { traits.append("body") }
+            if practice.matching.closedEye { traits.append("closed-eye") }
+            if practice.matching.breathFocused { traits.append("breath") }
+            if practice.matching.devotional { traits.append("devotional") }
+            if practice.matching.intense { traits.append("intense") }
+            parts.append("- **\(practice.name)** (id: `\(practice.id)`, category: \(practice.category), family: \(practice.matching.family), ~\(practice.durationMinutes)m, \(practice.intensity), \(evidence), traits:\(traits.joined(separator: ","))): \(practice.summary) Best for: \(bestFor).")
+        }
+
+        if let profile, profile.completionState == .completed {
+            parts.append("")
+            parts.append("## Intake Profile")
+            parts.append("")
+            parts.append("Hard constraints must not be violated unless the current check-in clearly and specifically requests an exception.")
+            let hardConstraints = profile.hardConstraints
+            if hardConstraints.isEmpty {
+                parts.append("Hard constraints: none captured.")
+            } else {
+                parts.append("Hard constraints:")
+                for constraint in hardConstraints {
+                    parts.append("- \(constraint)")
+                }
+            }
+            let softPriors = profile.softPriors
+            if softPriors.isEmpty {
+                parts.append("Soft priors: none captured.")
+            } else {
+                parts.append("Soft priors:")
+                for prior in softPriors {
+                    parts.append("- \(prior)")
+                }
+            }
+            if !profile.desiredSupportAreas.isEmpty {
+                parts.append("Desired support areas: \(profile.desiredSupportAreas.joined(separator: ", ")).")
+            }
+            if !profile.practiceHistory.isEmpty {
+                let historySignals = profile.practiceHistory.map { "\($0.family): \($0.signal.rawValue)" }
+                parts.append("Practice history signals: \(historySignals.joined(separator: "; ")).")
+            }
+            if profile.requiresEvidenceGrounding {
+                parts.append("Evidence preference: recommend only practices marked evidence-grounded in the library.")
+            }
+            if profile.requiresSecularFraming && profile.allowsSpiritualLanguage {
+                parts.append("Language preference: secular framing is required; spiritual or contemplative language is allowed only when it avoids religious doctrine, devotional framing, prayer, deity language, and tradition-dependent authority.")
+            } else if profile.requiresSecularFraming {
+                parts.append("Language preference: secular framing only.")
+            } else if profile.allowsSpiritualLanguage {
+                parts.append("Language preference: spiritual language is okay when relevant.")
+            }
+            if !profile.coachingStyles.isEmpty {
+                parts.append("Coaching style preferences: \(profile.coachingStyles.joined(separator: ", ")).")
+            }
         }
 
         if !historyToUse.isEmpty {

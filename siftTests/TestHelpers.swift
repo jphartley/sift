@@ -5,7 +5,7 @@ import SwiftData
 enum TestHelpers {
     @MainActor
     static func makeContainer() throws -> ModelContainer {
-        let schema = Schema([Session.self, PracticeAttempt.self, MetricEvent.self])
+        let schema = Schema([Session.self, PracticeAttempt.self, MetricEvent.self, UserPracticeProfile.self])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: config)
     }
@@ -33,6 +33,20 @@ enum TestHelpers {
         intensity: low
         avoid_when:
           - feeling dizzy
+        evidence:
+          research_backed: true
+          notes: Breathing regulation has explicit stress and arousal research grounding.
+          tags:
+            - breathing
+            - arousal-regulation
+        matching:
+          family: breathwork
+          worldview: secular
+          body_focused: false
+          closed_eye: false
+          breath_focused: true
+          devotional: false
+          intense: false
       - id: body-scan
         name: Body Scan
         category: Sensory
@@ -51,6 +65,20 @@ enum TestHelpers {
         duration_minutes: 5
         intensity: low
         avoid_when: []
+        evidence:
+          research_backed: true
+          notes: Body awareness practices have explicit mindfulness research grounding.
+          tags:
+            - mindfulness
+            - body-awareness
+        matching:
+          family: grounding
+          worldview: secular
+          body_focused: true
+          closed_eye: false
+          breath_focused: false
+          devotional: false
+          intense: false
       - id: morning-pages
         name: Morning Pages
         category: Journaling
@@ -69,6 +97,19 @@ enum TestHelpers {
         duration_minutes: 10
         intensity: medium
         avoid_when: []
+        evidence:
+          research_backed: false
+          notes: Useful expressive writing lineage, but no explicit grounding for this exact catalogue variant.
+          tags:
+            - journaling
+        matching:
+          family: journaling
+          worldview: secular
+          body_focused: false
+          closed_eye: false
+          breath_focused: false
+          devotional: false
+          intense: false
       - id: stretch-break
         name: Stretch Break
         category: Movement
@@ -88,6 +129,20 @@ enum TestHelpers {
         intensity: low
         avoid_when:
           - sharp pain
+        evidence:
+          research_backed: true
+          notes: Movement breaks have explicit wellbeing and tension-reduction grounding.
+          tags:
+            - movement
+            - tension
+        matching:
+          family: yoga-or-movement
+          worldview: secular
+          body_focused: true
+          closed_eye: false
+          breath_focused: false
+          devotional: false
+          intense: false
     """
 
     static func setupPractices() {

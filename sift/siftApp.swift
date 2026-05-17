@@ -25,7 +25,7 @@ struct siftApp: App {
         let resolvedContainer: ModelContainer
         do {
             try AppStoragePreparation.prepareApplicationSupportDirectory()
-            resolvedContainer = try ModelContainer(for: Session.self, PracticeAttempt.self, MetricEvent.self)
+            resolvedContainer = try ModelContainer(for: Session.self, PracticeAttempt.self, MetricEvent.self, UserPracticeProfile.self)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }

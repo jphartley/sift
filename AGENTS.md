@@ -50,30 +50,37 @@ This is the **voice check-in MVP** — the first product-feature iteration after
 
 ```
 sift/
-  siftApp.swift           — @main entry, sets up SwiftData ModelContainer for Session + PracticeAttempt
-  ContentView.swift       — TabView with "Record" and "History" tabs
+  siftApp.swift           — @main entry, sets up SwiftData ModelContainer for Session + PracticeAttempt + MetricEvent + UserPracticeProfile
+  ContentView.swift       — TabView with first-time intake gating, "Record", and "History" tabs
   Models/
     Session.swift         — @Model: one voice check-in, transcript + audio/transcription durations + geminiRationale/geminiModelUsed/geminiConfidence + cascade-delete attempts relationship
     PracticeAttempt.swift — @Model: one practice trial, linked to session, with helpfulness rating
     MetricEvent.swift     — metric event model for internal instrumentation
-    PracticeLibrary.swift — Practice struct + YAML-backed richer practice library loader
+    UserPracticeProfile.swift — @Model: first-time intake completion state, hard constraints, soft priors, language/evidence preferences, and practice history signals
+    IntakeModels.swift    — intake prompt/chip/response models and approved intake copy
+    PracticeLibrary.swift — Practice struct + YAML-backed richer practice library loader with evidence and matching metadata
   Services/
     CheckInServices.swift      — Protocol boundaries for audio recording, transcription, recommendations, and session persistence/history/delete; includes SwiftDataSessionStore
     AudioRecorderService.swift  — AVAudioRecorder (PCM 16kHz mono WAV, temp file)
     TranscriptionService.swift  — WhisperKit wrapper, loads "openai_whisper-base.en" model
-    GeminiService.swift         — RecommendationClient facade for Gemini recommendations
-    GeminiPromptBuilder.swift   — Builds prompts from transcript + library + user history
+    UserPracticeProfileStore.swift — SwiftData-backed profile access boundary for intake and recommendation flows
+    IntakeAnalysisService.swift — deterministic intake response analyzer that normalizes chips and voice answers into a profile
+    GeminiService.swift         — RecommendationClient facade for Gemini recommendations with profile-aware validation
+    GeminiPromptBuilder.swift   — Builds prompts from transcript + library + user history + intake profile
     GeminiRecommendationParser.swift — Decodes and validates structured Gemini JSON responses
     GeminiRecommendationRouter.swift — GoogleGenerativeAI request boundary + Flash/Pro routing + retry classification
+    RecommendationConstraintValidator.swift — local post-response validation for hard intake constraints before suggestions are shown
     MetricRecorder.swift        — internal metric/event recorder
     Secrets.swift               — Checked-in safe Gemini API key fallback; reads bundled ignored GeminiAPIKey.local at runtime
     GeminiAPIKey.local.example  — Template for ignored local Gemini API key text file
   ViewModels/
     RecordingViewModel.swift    — orchestrator: uses injectable check-in service protocols, owns async task cancellation/teardown, manages RecordingState enum (idle/loadingModel/ready/preparingToRecord/recording/transcribing/analyzing/suggesting/practicing/reflecting/error)
+    IntakeViewModel.swift       — first-time intake flow state, chip/voice response capture, skip handling, optional tuning, and profile persistence
     HistoryViewModel.swift      — history deletion state owner, routes deletes through SessionStore and surfaces delete failures
     ReflectionViewModel.swift   — reflection flow state and persistence helpers
     CheckInRecoveryPresentation.swift — recovery copy/state after interrupted or failed check-ins
   Views/
+    IntakeScreen.swift          — first-time intro, three primary voice-first prompts, structured chips, optional deeper tuning, skip and recovery paths
     RecordingScreen.swift       — first-time setup copy, record button, audio level meter, delegates to flow views, tears down in-flight check-in work on disappearance
     AnalyzingView.swift         — "Analyzing..." spinner with delayed transcript reveal
     SuggestionView.swift        — transcript display + human-facing recommendation rationale + 2–3 practice cards with "Helped before" badge, relevance text, and expandable details
@@ -95,23 +102,28 @@ siftTests/
     ProjectMetadataTests.swift             — Xcode project metadata and startup checks for beta-facing app name, microphone permission copy, version values, and storage preparation
     Models/
       PracticeLibraryTests.swift           — YAML decoding + library integrity
+      UserPracticeProfileTests.swift       — profile absence, skipped/completed state, persistence, and replacement behavior
       SessionTests.swift                   — model defaults + Gemini fields
       PracticeAttemptTests.swift           — model defaults
       SwiftDataTests.swift                 — cascade delete + store deletion + predicate filtering + Gemini persistence round-trip
     ViewModels/
       RecordingStateTests.swift            — enum equality for all cases
-      RecordingViewModelTests.swift        — fake-backed check-in flow, persistence, retry, async cancellation, and failure-path tests
+      RecordingViewModelTests.swift        — fake-backed check-in flow, profile handoff, persistence, retry, async cancellation, and failure-path tests
+      IntakeViewModelTests.swift           — fake-backed intake skip, analysis, optional branch, and failure-path tests
       HistoryViewModelTests.swift          — fake-backed history deletion success and failure-path tests
       RecordingScreenRecoveryTests.swift   — recovery presentation coverage
     Services/
       TranscriptionServiceTests.swift      — error descriptions + ModelState equality
+      IntakeAnalysisServiceTests.swift     — deterministic intake normalization for constraints, priors, mixed preferences, and voice answers
       GeminiServiceTests.swift             — recommendation data/error basics + safe secret fallback behavior
-      GeminiPromptBuilderTests.swift       — prompt construction
+      GeminiPromptBuilderTests.swift       — prompt construction with history, practice metadata, and optional profile context
       GeminiRecommendationParserTests.swift — structured response parsing and validation
       GeminiRecommendationRouterTests.swift — Flash/Pro routing + retryable error detection
+      RecommendationConstraintValidatorTests.swift — local hard-constraint validation and current-check-in override behavior
       MetricRecorderTests.swift            — metric recorder behavior
       GeminiLoggingTests.swift             — logging and redaction coverage
     Views/
+      IntakeContentTests.swift              — approved intake copy, chips, action labels, and first-launch gating
       SuggestionViewContentTests.swift      — suggestion explanation copy and hidden model-routing details
       PrivacyContentTests.swift            — privacy screen copy and presentation
       HistoryGroupingTests.swift           — history grouping behavior

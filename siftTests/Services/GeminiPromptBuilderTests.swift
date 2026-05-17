@@ -173,6 +173,39 @@ struct GeminiPromptBuilderTests {
         #expect(!prompt.isEmpty)
     }
 
+    @Test func promptIncludesProfileContextWithHardConstraintsAndSoftPriors() {
+        let builder = GeminiPromptBuilder()
+        let profile = UserPracticeProfile(
+            completionState: .completed,
+            desiredSupportAreas: ["Calming down"],
+            practiceHistory: [PracticeFamilyPreference(family: "breathwork", signal: .helpedSometimes)],
+            hardConstraints: ["Use secular framing."],
+            softPriors: ["Prefer short practices."],
+            requiresSecularFraming: true,
+            allowsSpiritualLanguage: true,
+            requiresEvidenceGrounding: true
+        )
+
+        let prompt = builder.buildPrompt(transcript: "I feel overwhelmed", history: [], profile: profile)
+
+        #expect(prompt.contains("Intake Profile"))
+        #expect(prompt.contains("Hard constraints:"))
+        #expect(prompt.contains("Use secular framing."))
+        #expect(prompt.contains("Soft priors:"))
+        #expect(prompt.contains("Prefer short practices."))
+        #expect(prompt.contains("Desired support areas: Calming down."))
+        #expect(prompt.contains("Practice history signals: breathwork: helpedSometimes."))
+        #expect(prompt.contains("Evidence preference: recommend only practices marked evidence-grounded in the library."))
+        #expect(prompt.contains("secular framing is required"))
+    }
+
+    @Test func promptWithoutProfileOmitsProfileSection() {
+        let builder = GeminiPromptBuilder()
+        let prompt = builder.buildPrompt(transcript: "test", history: [], profile: nil)
+
+        #expect(!prompt.contains("Intake Profile"))
+    }
+
     @Test func trimmedPromptUsesSmallerContext() {
         let builder = GeminiPromptBuilder(practices: Array(repeating: Practice.all[0], count: 30))
         let history = (0..<10).map { index in

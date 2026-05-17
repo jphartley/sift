@@ -38,6 +38,7 @@ final class GeminiService: RecommendationClient {
 
     private let promptBuilder: GeminiPromptBuilder
     private let router: GeminiRecommendationRouter
+    private let validator: RecommendationConstraintValidator
     private let apiKeyProvider: () -> String
     private let logger: (String) -> Void
     private let recorder: MetricRecorder?
@@ -47,6 +48,7 @@ final class GeminiService: RecommendationClient {
         self.init(
             promptBuilder: GeminiPromptBuilder(),
             router: GeminiRecommendationRouter(requester: LiveGeminiModelRequester(), recorder: recorder),
+            validator: RecommendationConstraintValidator(),
             apiKeyProvider: { Secrets.geminiApiKey },
             logger: { print($0) },
             recorder: recorder,
@@ -57,6 +59,7 @@ final class GeminiService: RecommendationClient {
     init(
         promptBuilder: GeminiPromptBuilder = GeminiPromptBuilder(),
         router: GeminiRecommendationRouter = GeminiRecommendationRouter(requester: LiveGeminiModelRequester()),
+        validator: RecommendationConstraintValidator = RecommendationConstraintValidator(),
         apiKeyProvider: @escaping () -> String = { Secrets.geminiApiKey },
         logger: @escaping (String) -> Void = { print($0) },
         recorder: MetricRecorder? = nil,
@@ -64,6 +67,7 @@ final class GeminiService: RecommendationClient {
     ) {
         self.promptBuilder = promptBuilder
         self.router = router
+        self.validator = validator
         self.apiKeyProvider = apiKeyProvider
         self.logger = logger
         self.recorder = recorder
@@ -72,20 +76,22 @@ final class GeminiService: RecommendationClient {
 
     func recommend(
         transcript: String,
-        history: [SessionHistoryEntry]
+        history: [SessionHistoryEntry],
+        profile: UserPracticeProfile? = nil
     ) async throws -> RecommendationResult {
         let experiments = experimentStore?.snapshot ?? .baseline
         if let recorder {
             return try await recorder.time(name: "gemini.total", metadata: experiments.metricMetadata) {
-                try await recommendBody(transcript: transcript, history: history, experiments: experiments)
+                try await recommendBody(transcript: transcript, history: history, profile: profile, experiments: experiments)
             }
         }
-        return try await recommendBody(transcript: transcript, history: history, experiments: experiments)
+        return try await recommendBody(transcript: transcript, history: history, profile: profile, experiments: experiments)
     }
 
     private func recommendBody(
         transcript: String,
         history: [SessionHistoryEntry],
+        profile: UserPracticeProfile?,
         experiments: AnalysisLatencyExperimentSnapshot
     ) async throws -> RecommendationResult {
         let key = apiKeyProvider()
@@ -93,10 +99,11 @@ final class GeminiService: RecommendationClient {
             throw GeminiError.apiKeyMissing
         }
 
-        let prompt = promptBuilder.buildPrompt(transcript: transcript, history: history, experiments: experiments)
+        let prompt = promptBuilder.buildPrompt(transcript: transcript, history: history, profile: profile, experiments: experiments)
         logger("[GeminiService] Sending to \(experiments.flashModelName) — prompt length: \(prompt.count) chars, history entries: \(history.count)")
         let result = try await router.recommend(prompt: prompt, apiKey: key, experiments: experiments)
-        logger("[GeminiService] Success — model: \(result.modelUsed), confidence: \(result.confidence), escalated: \(result.wasEscalated), practices: \(result.practices.map(\.practiceID))")
-        return result
+        let validatedResult = try validator.validate(result, profile: profile, transcript: transcript)
+        logger("[GeminiService] Success — model: \(validatedResult.modelUsed), confidence: \(validatedResult.confidence), escalated: \(validatedResult.wasEscalated), practices: \(validatedResult.practices.map(\.practiceID))")
+        return validatedResult
     }
 }

@@ -83,6 +83,17 @@ PRD and supplement requirements against the voice check-in MVP.
 - **To Do** — Planned but not yet started
 - **Out of Scope** — Deliberately excluded from the current MVP phase
 
+## Intake
+
+Enhancements and follow-up work for the first-time intake flow.
+
+| Item | Priority | Notes |
+|---|---|---|
+| Intake recording UI: match main check-in recording experience | Medium | Voice recording controls in intake feel unresponsive and give little visual feedback compared to the main check-in flow. Should use the same waveform animation, state transitions, and affordances. |
+| Wrap-up screen after final intake question | Medium | After completing the last question the user is dropped directly into the check-in screen. A brief transition screen should acknowledge what Sift learned and set expectations for the first check-in. Content and tone TBD. |
+| Affordance to resurface optional intake questions | Low | Users who skipped optional intake questions have no way to answer them later. Add an in-app surface (likely in Settings or Privacy tab) to answer or revisit optional intake questions after several check-ins. |
+| Debug screen: reset intake profile for retesting | Low | Add a button in the Debug screen to clear the persisted UserPracticeProfile and re-trigger the first-time intake flow, enabling repeated testing without reinstalling the app. |
+
 ## Future Backlog Items
 
 | Item | Priority | Notes |

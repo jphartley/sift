@@ -57,6 +57,19 @@ struct PracticeLibraryTests {
             intensity: low
             avoid_when:
               - never
+            evidence:
+              research_backed: true
+              notes: Test evidence note.
+              tags:
+                - test
+            matching:
+              family: grounding
+              worldview: secular
+              body_focused: false
+              closed_eye: false
+              breath_focused: false
+              devotional: false
+              intense: false
         """
         let practices = try Practice.load(from: yaml)
         #expect(practices.count == 1)
@@ -73,6 +86,16 @@ struct PracticeLibraryTests {
         #expect(p.durationMinutes == 5)
         #expect(p.intensity == "low")
         #expect(p.avoidWhen == ["never"])
+        #expect(p.evidence.researchBacked)
+        #expect(p.evidence.notes == "Test evidence note.")
+        #expect(p.evidence.tags == ["test"])
+        #expect(p.matching.family == "grounding")
+        #expect(p.matching.worldview == "secular")
+        #expect(!p.matching.bodyFocused)
+        #expect(!p.matching.closedEye)
+        #expect(!p.matching.breathFocused)
+        #expect(!p.matching.devotional)
+        #expect(!p.matching.intense)
     }
 
     @Test func ignoresUnknownKeys() throws {
@@ -94,6 +117,19 @@ struct PracticeLibraryTests {
             duration_minutes: 2
             intensity: low
             avoid_when: []
+            evidence:
+              research_backed: true
+              notes: Test evidence note.
+              tags:
+                - test
+            matching:
+              family: grounding
+              worldview: secular
+              body_focused: false
+              closed_eye: false
+              breath_focused: false
+              devotional: false
+              intense: false
             unknown_field: ignored
             another_unknown: also_ignored
         """
@@ -133,6 +169,19 @@ struct PracticeLibraryTests {
             duration_minutes: "not_a_number"
             intensity: low
             avoid_when: []
+            evidence:
+              research_backed: true
+              notes: Test evidence note.
+              tags:
+                - test
+            matching:
+              family: grounding
+              worldview: secular
+              body_focused: false
+              closed_eye: false
+              breath_focused: false
+              devotional: false
+              intense: false
         """
         #expect(throws: (any Error).self) {
             try Practice.load(from: yaml)
@@ -158,6 +207,19 @@ struct PracticeLibraryTests {
             duration_minutes: 1
             intensity: low
             avoid_when: []
+            evidence:
+              research_backed: true
+              notes: First evidence note.
+              tags:
+                - first
+            matching:
+              family: grounding
+              worldview: secular
+              body_focused: false
+              closed_eye: false
+              breath_focused: false
+              devotional: false
+              intense: false
           - id: second
             name: Second
             category: B
@@ -174,6 +236,19 @@ struct PracticeLibraryTests {
             duration_minutes: 2
             intensity: low
             avoid_when: []
+            evidence:
+              research_backed: false
+              notes: Second evidence note.
+              tags:
+                - second
+            matching:
+              family: journaling
+              worldview: secular
+              body_focused: false
+              closed_eye: false
+              breath_focused: false
+              devotional: false
+              intense: false
         """
         let practices = try Practice.load(from: yaml)
         #expect(practices.count == 2)
@@ -213,5 +288,26 @@ struct PracticeLibraryTests {
         #expect(categoryCounts["Self-Compassion"] == 7)
         #expect(categoryCounts["Values & Intention"] == 7)
         #expect(categoryCounts["Spiritual / Contemplative"] == 8)
+    }
+
+    @Test func allPracticesHaveExplicitEvidenceMetadata() async {
+        let researchBackedValues = Set(Practice.all.map(\.evidence.researchBacked))
+        for practice in Practice.all {
+            #expect(!practice.evidence.notes.isEmpty)
+            #expect(!practice.evidence.tags.isEmpty)
+        }
+        #expect(researchBackedValues.contains(true))
+        #expect(researchBackedValues.contains(false))
+    }
+
+    @Test func allPracticesHaveExplicitMatchingMetadata() async {
+        for practice in Practice.all {
+            #expect(!practice.matching.family.isEmpty)
+            #expect(!practice.matching.worldview.isEmpty)
+            #expect(["low", "medium", "high"].contains(practice.intensity))
+            if practice.intensity == "high" {
+                #expect(practice.matching.intense)
+            }
+        }
     }
 }

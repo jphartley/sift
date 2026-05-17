@@ -26,6 +26,7 @@ final class RecordingViewModel {
     private var transcriptionService: TranscriptionClient?
     private var recommendationClient: RecommendationClient?
     private var sessionStore: SessionStore?
+    private var profileStore: UserPracticeProfileStore?
     private var meterPollingTask: Task<Void, Never>?
     private var recordingStartupTask: Task<Void, Never>?
     private var analysisTask: Task<Void, Never>?
@@ -43,11 +44,13 @@ final class RecordingViewModel {
         sessionStore: SessionStore,
         transcriptionService: TranscriptionClient,
         recommendationClient: RecommendationClient,
+        profileStore: UserPracticeProfileStore? = nil,
         audioRecorder: AudioRecording? = nil
     ) {
         self.sessionStore = sessionStore
         self.transcriptionService = transcriptionService
         self.recommendationClient = recommendationClient
+        self.profileStore = profileStore
         if let audioRecorder {
             self.audioRecorder = audioRecorder
         }
@@ -293,7 +296,8 @@ final class RecordingViewModel {
         }
 
         let history = try sessionStore?.recommendationHistory() ?? []
-        return try await recommendationClient.recommend(transcript: transcript, history: history)
+        let profile = try profileStore?.currentProfile()
+        return try await recommendationClient.recommend(transcript: transcript, history: history, profile: profile)
     }
 
     private func resolvePractices(from result: RecommendationResult) -> [Practice] {

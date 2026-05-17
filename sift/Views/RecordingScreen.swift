@@ -148,6 +148,7 @@ struct RecordingScreen: View {
                 sessionStore: SwiftDataSessionStore(modelContext: modelContext, recorder: metricRecorder),
                 transcriptionService: transcriptionService,
                 recommendationClient: geminiService,
+                profileStore: SwiftDataUserPracticeProfileStore(modelContext: modelContext),
                 audioRecorder: audioRecorderService
             )
             await viewModel.setup()

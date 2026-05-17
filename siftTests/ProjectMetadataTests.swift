@@ -36,7 +36,7 @@ struct ProjectMetadataTests {
         let appSource = try appSourceText()
 
         let preparationCall = try #require(appSource.range(of: "try AppStoragePreparation.prepareApplicationSupportDirectory()"))
-        let containerInitialization = try #require(appSource.range(of: "ModelContainer(for: Session.self, PracticeAttempt.self, MetricEvent.self)"))
+        let containerInitialization = try #require(appSource.range(of: "ModelContainer(for: Session.self, PracticeAttempt.self, MetricEvent.self, UserPracticeProfile.self)"))
 
         #expect(preparationCall.lowerBound < containerInitialization.lowerBound)
         #expect(!appSource.contains("ModelConfiguration("))

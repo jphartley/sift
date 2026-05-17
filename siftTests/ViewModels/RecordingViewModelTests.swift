@@ -13,7 +13,8 @@ struct RecordingViewModelTests {
         audioRecorder: FakeAudioRecorder? = nil,
         transcriptionClient: FakeTranscriptionClient? = nil,
         recommendationClient: RecommendationClient? = nil,
-        sessionStore: FakeSessionStore? = nil
+        sessionStore: FakeSessionStore? = nil,
+        profileStore: UserPracticeProfileStore? = nil
     ) -> (RecordingViewModel, FakeAudioRecorder, FakeTranscriptionClient, RecommendationClient, FakeSessionStore) {
         let audioRecorder = audioRecorder ?? FakeAudioRecorder()
         let transcriptionClient = transcriptionClient ?? FakeTranscriptionClient()
@@ -23,7 +24,8 @@ struct RecordingViewModelTests {
         viewModel.configure(
             sessionStore: sessionStore,
             transcriptionService: transcriptionClient,
-            recommendationClient: recommendationClient
+            recommendationClient: recommendationClient,
+            profileStore: profileStore
         )
         return (viewModel, audioRecorder, transcriptionClient, recommendationClient, sessionStore)
     }
@@ -538,6 +540,27 @@ struct RecordingViewModelTests {
         #expect(recommendationClient.receivedHistory[0].wasHelpful == true)
     }
 
+    @Test func profileFromStoreIsPassedToRecommendationClient() async {
+        let profile = UserPracticeProfile(
+            completionState: .completed,
+            hardConstraints: ["Avoid breath-focused practices"]
+        )
+        let profileStore = FakeProfileStore(profile: profile)
+        let recommendationClient = FakeRecommendationClient()
+        let (viewModel, _, _, _, _) = makeViewModel(
+            recommendationClient: recommendationClient,
+            profileStore: profileStore
+        )
+        viewModel.state = .ready
+
+        await startRecording(viewModel)
+        if let task = viewModel.stopRecording() {
+            await task.value
+        }
+
+        #expect(recommendationClient.receivedProfile === profile)
+    }
+
     @Test func noResolvablePracticesShowsEmptySuggestionsRecovery() async {
         let recommendationClient = FakeRecommendationClient(result: RecommendationResult(
             rationale: "Try something.",
@@ -766,6 +789,7 @@ private final class FakeTranscriptionClient: TranscriptionClient {
 private final class FakeRecommendationClient: RecommendationClient {
     var receivedTranscript: String?
     var receivedHistory: [SessionHistoryEntry] = []
+    var receivedProfile: UserPracticeProfile?
 
     private let result: RecommendationResult
     private let error: Error?
@@ -784,10 +808,11 @@ private final class FakeRecommendationClient: RecommendationClient {
         self.error = error
     }
 
-    func recommend(transcript: String, history: [SessionHistoryEntry]) async throws -> RecommendationResult {
+    func recommend(transcript: String, history: [SessionHistoryEntry], profile: UserPracticeProfile?) async throws -> RecommendationResult {
         if let error { throw error }
         receivedTranscript = transcript
         receivedHistory = history
+        receivedProfile = profile
         return result
     }
 }
@@ -795,7 +820,7 @@ private final class FakeRecommendationClient: RecommendationClient {
 private final class ControlledRecommendationClient: RecommendationClient {
     private var requests: [CheckedContinuation<RecommendationResult, Error>] = []
 
-    func recommend(transcript: String, history: [SessionHistoryEntry]) async throws -> RecommendationResult {
+    func recommend(transcript: String, history: [SessionHistoryEntry], profile: UserPracticeProfile?) async throws -> RecommendationResult {
         try await withCheckedThrowingContinuation { continuation in
             requests.append(continuation)
         }
@@ -820,7 +845,7 @@ private final class SequencedRecommendationClient: RecommendationClient {
         self.results = results
     }
 
-    func recommend(transcript: String, history: [SessionHistoryEntry]) async throws -> RecommendationResult {
+    func recommend(transcript: String, history: [SessionHistoryEntry], profile: UserPracticeProfile?) async throws -> RecommendationResult {
         receivedTranscripts.append(transcript)
         guard !results.isEmpty else {
             throw TestError.noMoreResults
@@ -863,6 +888,26 @@ private final class FakeSessionStore: SessionStore {
     func delete(_ sessions: [Session]) throws {
         if let deleteError { throw deleteError }
         deletedSessions.append(contentsOf: sessions)
+    }
+}
+
+private final class FakeProfileStore: UserPracticeProfileStore {
+    var profile: UserPracticeProfile?
+
+    init(profile: UserPracticeProfile? = nil) {
+        self.profile = profile
+    }
+
+    func currentProfile() throws -> UserPracticeProfile? {
+        profile
+    }
+
+    func save(_ profile: UserPracticeProfile) throws {
+        self.profile = profile
+    }
+
+    func markSkipped() throws {
+        profile = .skipped()
     }
 }
 

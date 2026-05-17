@@ -18,7 +18,7 @@ protocol TranscriptionClient: AnyObject {
 }
 
 protocol RecommendationClient: AnyObject {
-    func recommend(transcript: String, history: [SessionHistoryEntry]) async throws -> RecommendationResult
+    func recommend(transcript: String, history: [SessionHistoryEntry], profile: UserPracticeProfile?) async throws -> RecommendationResult
 }
 
 protocol SessionStore: AnyObject {
