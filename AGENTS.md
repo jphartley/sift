@@ -26,7 +26,8 @@ If a task fails or you are stuck:
 
 ### Maintenance
 - Keep this file lean. Move detailed patterns, API references, and architecture guides to `/docs/` or knowledge base files.
-- See `/docs/` for the PRD, memory architecture supplement, and WhisperKit decision rationale.
+- See `/docs/` for the PRD, memory architecture supplement, WhisperKit decision rationale, release notes, and testing guidance.
+- For App Store release behavior, see [/docs/release.md](/Users/jeremy/code/sift/docs/release.md).
 
 ## Current phase
 

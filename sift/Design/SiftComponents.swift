@@ -61,6 +61,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 22)
             .background(soft ? SiftColor.accentSoft : SiftColor.accent)
             .clipShape(RoundedRectangle(cornerRadius: SiftRadius.button))
+            .contentShape(RoundedRectangle(cornerRadius: SiftRadius.button))
             .overlay(
                 RoundedRectangle(cornerRadius: SiftRadius.button)
                     .strokeBorder(Color.white.opacity(soft ? 0 : 0.2), lineWidth: 1)
@@ -84,6 +85,7 @@ struct GhostButtonStyle: ButtonStyle {
             .padding(.horizontal, 22)
             .background(.clear)
             .clipShape(RoundedRectangle(cornerRadius: SiftRadius.button))
+            .contentShape(RoundedRectangle(cornerRadius: SiftRadius.button))
             .overlay(
                 RoundedRectangle(cornerRadius: SiftRadius.button)
                     .strokeBorder(SiftColor.line, lineWidth: 1)
