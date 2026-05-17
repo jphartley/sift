@@ -103,6 +103,24 @@ siftUITests/
     siftUITests.swift                      — app launch + tab navigation (2 tests)
 ```
 
+## Benchmarks
+
+`siftTests/GeminiBenchmark.swift` measures end-to-end Gemini recommendation latency (20 iterations, 5 fixture transcripts). It is **excluded from the default test run** — it requires an explicit opt-in so it doesn't slow down normal `xcodebuild test` invocations.
+
+**Run it:**
+
+```bash
+./scripts/run-benchmark.sh
+```
+
+The script passes `-testenv RUN_BENCHMARKS=1` and targets `-only-testing:siftTests/GeminiBenchmark`. It reads the API key from `sift/Services/GeminiAPIKey.local` (the same gitignored file the app uses). The benchmark skips automatically if the key is absent.
+
+**Output:** lines prefixed with `BENCHMARK` are emitted to stdout in a machine-parseable format:
+
+```
+BENCHMARK iter=1 ms=1243 model=gemini-1.5-flash conf=0.82 escalated=false experiments=baseline
+```
+
 ## What's not tested (yet)
 
 - `AudioRecorderService` — requires `AVAudioRecorder` and a real microphone

@@ -29,7 +29,9 @@ struct DebugMetricsScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AnalysisLatencyExperimentStore.self) private var experimentStore
     @Query(sort: \MetricEvent.timestamp, order: .reverse) private var events: [MetricEvent]
+    @Query private var profiles: [UserPracticeProfile]
     @State private var showClearConfirmation = false
+    @State private var showResetOnboardingConfirmation = false
     @State private var showExperimentConfiguration = false
     @State private var selectedExperimentLabel = DebugMetricsFiltering.allLabel
 
@@ -89,6 +91,12 @@ struct DebugMetricsScreen: View {
                 )
             }
 
+            Section("Onboarding") {
+                Button("Reset onboarding", role: .destructive) {
+                    showResetOnboardingConfirmation = true
+                }
+            }
+
             if events.isEmpty {
                 Section {
                     emptyMetricsMessage
@@ -114,6 +122,18 @@ struct DebugMetricsScreen: View {
             }
         }
         .contentMargins(.bottom, 112, for: .scrollContent)
+        .confirmationDialog(
+            "Reset onboarding?",
+            isPresented: $showResetOnboardingConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset", role: .destructive) {
+                resetOnboarding()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This deletes all intake profile data. Sessions and metrics are not affected.")
+        }
         .navigationDestination(for: String.self) { name in
             MetricDetailView(
                 metricName: name,
@@ -162,6 +182,13 @@ struct DebugMetricsScreen: View {
     private func clearAllMetrics() {
         for event in events {
             modelContext.delete(event)
+        }
+        try? modelContext.save()
+    }
+
+    private func resetOnboarding() {
+        for profile in profiles {
+            modelContext.delete(profile)
         }
         try? modelContext.save()
     }

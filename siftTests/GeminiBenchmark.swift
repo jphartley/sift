@@ -19,8 +19,8 @@ struct GeminiBenchmark {
     ]
 
     @Test(
-        .disabled(if: Secrets.geminiApiKey.isEmpty,
-                  "Add API key to sift/Services/GeminiAPIKey.local to run benchmark"),
+        .disabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != "1" || Secrets.geminiApiKey.isEmpty,
+                  "Set RUN_BENCHMARKS=1 and add API key to sift/Services/GeminiAPIKey.local to run benchmark"),
         arguments: 1...20
     )
     func benchmarkGeminiRecommend(iteration: Int) async throws {

@@ -12,4 +12,5 @@ xcodebuild test \
     -scheme sift \
     -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
     -only-testing:siftTests/GeminiBenchmark \
+    -testenv RUN_BENCHMARKS=1 \
     2>&1 | grep -E "BENCHMARK|error:|Build succeeded|Test Suite|passed|failed"

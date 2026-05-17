@@ -43,6 +43,7 @@ This is the **voice check-in MVP** — the first product-feature iteration after
 - CLI build: `xcodebuild -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`
 - CLI test (all): `xcodebuild test -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 - CLI test (unit/integration only, skip slow UI): append ` -skip-testing:siftUITests`
+- Benchmark (Gemini latency, opt-in): `./scripts/run-benchmark.sh` — see `/docs/testing.md` for details.
 - No CI, no lint config yet.
 - **Pre-push hook**: `gitleaks detect` runs before every push. Blocked push = fix secrets first.
 
