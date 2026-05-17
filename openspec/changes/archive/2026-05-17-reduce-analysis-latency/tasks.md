@@ -15,10 +15,8 @@
 ## 3. Routing and execution slices
 
 - [x] 3.1 Add a flag for the Flash confidence threshold and a flag to disable escalation entirely, with tests for the default and overridden routing paths.
-- [ ] 3.2 Add a context-caching flag and a speculative-parallel flag behind kill switches, with tests that confirm they are inert when disabled.
-- [ ] 3.3 Add a streaming flag and the minimum UI/service coverage needed to prove the app can enter a progressive response path when that experiment is enabled.
 
 ## 4. Verification and cleanup
 
-- [ ] 4.1 Update the benchmark notes and any related docs to describe how to run and compare analysis-latency experiments.
-- [ ] 4.2 Run the relevant test suites for each slice, confirm the default-off path is unchanged, and remove any temporary logging or dead code introduced during the work.
+- [x] 4.1 Update the benchmark notes and any related docs to describe how to run and compare analysis-latency experiments.
+- [x] 4.2 Run the relevant test suites for each slice, confirm the default-off path is unchanged, and remove any temporary logging or dead code introduced during the work.

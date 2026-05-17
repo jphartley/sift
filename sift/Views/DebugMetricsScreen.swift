@@ -259,9 +259,6 @@ struct ExperimentConfigurationSheet: View {
 
         Section("Context and execution") {
             Toggle("Trim prompt context", isOn: $experimentStore.promptContextTrimmingEnabled)
-            Toggle("Enable cache experiment", isOn: $experimentStore.contextCachingEnabled)
-            Toggle("Enable speculative parallel", isOn: $experimentStore.speculativeParallelEnabled)
-            Toggle("Enable streaming", isOn: $experimentStore.streamingEnabled)
         }
     }
 }

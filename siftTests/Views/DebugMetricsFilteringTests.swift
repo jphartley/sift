@@ -5,20 +5,20 @@ import Testing
 struct DebugMetricsFilteringTests {
     @Test func availableLabelsAreSortedAndUnique() {
         let events = [
-            MetricEvent(name: "a", durationMs: 1, metadataJSON: #"{"analysis.experiments":"cache=on|flash=2.5-stable"}"#),
-            MetricEvent(name: "b", durationMs: 2, metadataJSON: #"{"analysis.experiments":"flash=2.5-stable|streaming=on"}"#)
+            MetricEvent(name: "a", durationMs: 1, metadataJSON: #"{"analysis.experiments":"output=1024|flash=2.5-stable"}"#),
+            MetricEvent(name: "b", durationMs: 2, metadataJSON: #"{"analysis.experiments":"flash=2.5-stable|schema=relaxed"}"#)
         ]
 
         #expect(DebugMetricsFiltering.availableExperimentLabels(from: events) == [
-            "cache=on",
             "flash=2.5-stable",
-            "streaming=on"
+            "output=1024",
+            "schema=relaxed"
         ])
     }
 
     @Test func filteredEventsMatchLabel() {
-        let matching = MetricEvent(name: "a", durationMs: 1, metadataJSON: #"{"analysis.experiments":"flash=2.5-stable|streaming=on"}"#)
-        let other = MetricEvent(name: "b", durationMs: 2, metadataJSON: #"{"analysis.experiments":"cache=on"}"#)
+        let matching = MetricEvent(name: "a", durationMs: 1, metadataJSON: #"{"analysis.experiments":"flash=2.5-stable|schema=relaxed"}"#)
+        let other = MetricEvent(name: "b", durationMs: 2, metadataJSON: #"{"analysis.experiments":"output=1024"}"#)
 
         let filtered = DebugMetricsFiltering.filteredEvents([matching, other], by: "flash=2.5-stable")
 

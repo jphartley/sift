@@ -77,9 +77,6 @@ struct AnalysisLatencyExperimentSnapshot: Equatable {
     var outputTokenBudget: OutputTokenBudget = .standard
     var confidenceThreshold: ConfidenceThreshold = .standard
     var escalationDisabled = false
-    var contextCachingEnabled = false
-    var speculativeParallelEnabled = false
-    var streamingEnabled = false
 
     static let baseline = AnalysisLatencyExperimentSnapshot()
 
@@ -99,9 +96,6 @@ struct AnalysisLatencyExperimentSnapshot: Equatable {
         if outputTokenBudget == .reduced { labels.append(outputTokenBudget.label) }
         if confidenceThreshold == .reduced { labels.append(confidenceThreshold.label) }
         if escalationDisabled { labels.append("escalation=off") }
-        if contextCachingEnabled { labels.append("cache=on") }
-        if speculativeParallelEnabled { labels.append("parallel=on") }
-        if streamingEnabled { labels.append("streaming=on") }
         return labels
     }
 
@@ -126,9 +120,6 @@ final class AnalysisLatencyExperimentStore {
     var outputTokenBudget: OutputTokenBudget = .standard
     var confidenceThreshold: ConfidenceThreshold = .standard
     var escalationDisabled = false
-    var contextCachingEnabled = false
-    var speculativeParallelEnabled = false
-    var streamingEnabled = false
 
     var snapshot: AnalysisLatencyExperimentSnapshot {
         AnalysisLatencyExperimentSnapshot(
@@ -137,10 +128,7 @@ final class AnalysisLatencyExperimentStore {
             promptContextTrimmingEnabled: promptContextTrimmingEnabled,
             outputTokenBudget: outputTokenBudget,
             confidenceThreshold: confidenceThreshold,
-            escalationDisabled: escalationDisabled,
-            contextCachingEnabled: contextCachingEnabled,
-            speculativeParallelEnabled: speculativeParallelEnabled,
-            streamingEnabled: streamingEnabled
+            escalationDisabled: escalationDisabled
         )
     }
 

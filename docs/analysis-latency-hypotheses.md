@@ -1,9 +1,9 @@
 # Analysis-phase latency — hypotheses & experiment plan
 
 Date: 2026-05-15
-Status: **Awaiting first data.** Instrumentation is live (see [openspec/changes/instrument-pipeline-metrics](../openspec/changes/instrument-pipeline-metrics/)); no measurements collected yet. Once a few days of organic usage produce data on the in-app debug tab, revisit this doc and prune the suspect list.
+Status: **Initial Gemini Flash data collected.** The first 20-run Flash-only benchmark showed roughly 7.6s min, 8.5s median, ~10.1s p95, and 10.2s max, with confidence between 0.95 and 1.00 and no Pro escalations. The active investigation has therefore shifted from escalation suspicion toward Flash request latency, schema overhead, and prompt shape.
 
-Companion to: the OpenSpec change that added `MetricRecorder`, `MetricEvent`, the `#if DEBUG` debug tab, and the Swift Testing benchmark harness.
+Companion to: the OpenSpec changes that added `MetricRecorder`, `MetricEvent`, the `#if DEBUG` debug tab, the Swift Testing benchmark harness, and the flag-gated analysis latency experiments.
 
 ---
 
@@ -150,6 +150,22 @@ Each experiment is a small, isolated change designed to test one hypothesis. Run
 
 ---
 
+## Implemented experiment controls
+
+The app now has debug-only runtime controls for the lower-risk Gemini-side slices from this matrix:
+
+- Flash model: baseline `gemini-3-flash-preview` vs stable `gemini-2.5-flash`.
+- Response schema: strict structured schema vs relaxed JSON response.
+- Prompt context: full context vs trimmed library/history context.
+- Output budget: 4096 vs 1024 max output tokens.
+- Routing: confidence threshold 0.7 vs 0.5, plus an option to disable Pro escalation.
+
+Each non-baseline setting contributes a compact label such as `flash=2.5-stable`, `schema=relaxed`, `prompt=trimmed`, `output=1024`, `threshold=0.5`, or `escalation=off`. Gemini timing samples include these labels in metric metadata, and the Debug tab can filter metric summaries by one label at a time.
+
+Streaming, context caching, and speculative parallelization remain future work. They are intentionally not exposed as toggles in this change because each one needs its own UX, cost, or request-lifecycle decision.
+
+---
+
 ## Decision rules — what to try first based on the data
 
 This section is the heart of the doc. When the metric history is in front of you, walk down this list:
@@ -200,9 +216,20 @@ To run:
 1. In Xcode: Edit Scheme → Test → Arguments → Environment Variables.
 2. Add `GEMINI_API_KEY` with your API key as the value.
 3. Run the `benchmarkGeminiRecommend` test (or run the full test suite — only this test consumes credits).
-4. Console output lines prefixed with `BENCHMARK` are parseable: `BENCHMARK iter=N ms=… model=… conf=… escalated=…`.
+4. Console output lines prefixed with `BENCHMARK` are parseable: `BENCHMARK iter=N ms=… model=… conf=… escalated=… experiments=…`.
 
 The benchmark intentionally does **not** persist its events to the SwiftData metric store, so it will not skew the percentiles on the in-app debug screen.
+
+## How to compare experiment runs in the app
+
+1. Open the Debug tab.
+2. Use the compact experiment row to see the current active labels.
+3. Tap Configure to open the experiment switch panel.
+4. Enable one experiment at a time, run a check-in, then return to Debug.
+5. Use Filter by label in the Per-metric section to isolate metrics for one active label.
+6. Compare `gemini.flash`, `gemini.pro`, and `gemini.total` p50/p95 values against the baseline rows.
+
+Prefer one enabled experiment per run when deciding whether a slice helped. Multi-flag combinations are useful only after the individual effects are known.
 
 ## What this doc is **not**
 

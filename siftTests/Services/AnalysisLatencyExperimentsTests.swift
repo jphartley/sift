@@ -18,9 +18,6 @@ struct AnalysisLatencyExperimentsTests {
         snapshot.outputTokenBudget = .reduced
         snapshot.confidenceThreshold = .reduced
         snapshot.escalationDisabled = true
-        snapshot.contextCachingEnabled = true
-        snapshot.speculativeParallelEnabled = true
-        snapshot.streamingEnabled = true
 
         #expect(snapshot.activeLabels == [
             "flash=2.5-stable",
@@ -28,12 +25,9 @@ struct AnalysisLatencyExperimentsTests {
             "prompt=trimmed",
             "output=1024",
             "threshold=0.5",
-            "escalation=off",
-            "cache=on",
-            "parallel=on",
-            "streaming=on"
+            "escalation=off"
         ])
-        #expect(snapshot.metricMetadata["analysis.experiments"] == "flash=2.5-stable|schema=relaxed|prompt=trimmed|output=1024|threshold=0.5|escalation=off|cache=on|parallel=on|streaming=on")
+        #expect(snapshot.metricMetadata["analysis.experiments"] == "flash=2.5-stable|schema=relaxed|prompt=trimmed|output=1024|threshold=0.5|escalation=off")
     }
 
     @Test func generationProfileReflectsSchemaAndBudget() {
