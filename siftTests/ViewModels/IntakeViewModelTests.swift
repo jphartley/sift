@@ -264,6 +264,52 @@ struct IntakeViewModelTests {
         #expect(viewModel.transcriptionError != nil)
         #expect(viewModel.response(for: .desiredSupport).selectedChipIDs.contains("calming-down"))
     }
+
+    @Test func nextPrimaryIsBlockedWhileTranscribing() async {
+        let recorder = FakeIntakeAudioRecorder()
+        let client = ControllableFakeTranscriptionClient()
+        let viewModel = IntakeViewModel()
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            transcriptionService: client,
+            audioRecorder: recorder
+        )
+        viewModel.begin()
+        #expect(viewModel.step == .primary(0))
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+        _ = viewModel.stopVoiceAnswer()
+        #expect(viewModel.isTranscribing)
+
+        viewModel.nextPrimary()
+
+        #expect(viewModel.step == .primary(0))
+    }
+
+    @Test func nextOptionalIsBlockedWhileTranscribing() async {
+        let recorder = FakeIntakeAudioRecorder()
+        let client = ControllableFakeTranscriptionClient()
+        let viewModel = IntakeViewModel()
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            transcriptionService: client,
+            audioRecorder: recorder
+        )
+        viewModel.begin()
+        viewModel.nextPrimary()
+        viewModel.nextPrimary()
+        viewModel.nextPrimary()
+        viewModel.acceptOptionalTuning()
+        #expect(viewModel.step == .optional(0))
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+        _ = viewModel.stopVoiceAnswer()
+        #expect(viewModel.isTranscribing)
+
+        _ = viewModel.nextOptional()
+
+        #expect(viewModel.step == .optional(0))
+    }
 }
 
 @MainActor
