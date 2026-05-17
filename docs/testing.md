@@ -5,7 +5,7 @@
 ```
         ┌──────────┐
         │  UI (2)  │  Smoke: app launch, tab navigation
-        │  ~12s    │  Framework: XCTest
+        │  ~12s    │  Framework: XCTest (iOS Simulator only)
         ├──────────┤
         │ INT/API  │  View model flows, SwiftData, Gemini collaborators
         │  ~0.3s   │  Framework: Swift Testing + fakes/in-memory SwiftData
@@ -15,23 +15,35 @@
         └──────────┘
 ```
 
+Unit and integration tests (siftTests) run on both iOS Simulator (~34s) and macOS via Mac Catalyst (~9s warm, no simulator needed).
+
 ## Running tests
 
 ```bash
-# Run everything (unit + integration + UI)
-xcodebuild test -project sift.xcodeproj -scheme sift \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+# DEFAULT — macOS/Catalyst (no simulator, ~9s warm). Use this for all normal development.
+xcodebuild test -scheme sift \
+  -destination 'platform=macOS,variant=Mac Catalyst' \
+  -only-testing:siftTests \
+  -skip-testing:siftTests/GeminiBenchmark \
+  -enableCodeCoverage NO
 
-# Unit and integration only (fast feedback)
+# OCCASIONAL — iOS Simulator, unit + integration only (~34s). Use before releases or
+# when investigating a platform-specific failure.
 xcodebuild test -project sift.xcodeproj -scheme sift \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -skip-testing:siftUITests
 
-# Specific test suite
+# iOS Simulator — full suite including UI tests (~50s)
+xcodebuild test -project sift.xcodeproj -scheme sift \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+
+# Specific test suite (iOS Simulator)
 xcodebuild test -project sift.xcodeproj -scheme sift \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:siftTests/PracticeLibraryTests
 ```
+
+> **Note on `-enableCodeCoverage NO`**: required for the Catalyst destination. `yyjson` (a WhisperKit transitive C dependency) fails to link against the LLVM profiling runtime on Mac Catalyst when coverage instrumentation is enabled.
 
 ## Frameworks
 
@@ -123,7 +135,7 @@ BENCHMARK iter=1 ms=1243 model=gemini-1.5-flash conf=0.82 escalated=false experi
 
 ## What's not tested (yet)
 
-- `AudioRecorderService` — requires `AVAudioRecorder` and a real microphone
+- `AudioRecorderService` — `AVAudioRecorder` is available on Mac Catalyst so `AudioRecorderServiceTests` compile and run on macOS, but live microphone recording is still untested (no real mic in CI or automated runs)
 - `TranscriptionService.loadModel()` / `transcribe()` — requires WhisperKit model download (~150MB) and real audio
 - Real Gemini network calls — covered through prompt, parser, router, and facade tests with fake requesters
 - Edge cases: force-quit during save, concurrent sessions, long-term history growth

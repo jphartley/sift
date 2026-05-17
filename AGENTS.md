@@ -6,13 +6,13 @@ iOS wellness companion app — SwiftUI + SwiftData + WhisperKit.
 
 ### Core Workflow
 - Focus on correctness and project alignment.
-- Every behavior change MUST update or add tests. Run `xcodebuild test` before committing.
+- Every behavior change MUST update or add tests. Run the standard test command before committing (see Build & run for the Mac Catalyst fast command).
 - Only after the task is complete, perform a cleanup pass: remove dead code, unused imports, stale comments; reduce unnecessary abstraction; align with project patterns and conventions. Do not expand scope during this pass.
 - Remind the user to commit frequently in small, logical, verified units. The user decides when to commit. Use descriptive messages when asked to commit (e.g., `feat: add user validation`, `fix: resolve import error`).
 
 ### Definition of Done
 - Relevant tests are added or updated for behavior changes.
-- `xcodebuild test` has passed, or any inability to run it is clearly explained.
+- The Mac Catalyst test command has passed, or any inability to run it is clearly explained.
 - `AGENTS.md` has been checked for needed updates when architecture, dependencies, build/test commands, project phase, or major workflows change.
 - The cleanup pass is complete and scoped to the finished task.
 
@@ -41,7 +41,8 @@ This is the **voice check-in MVP** — the first product-feature iteration after
 - Open `sift.xcodeproj` in Xcode (built with Xcode 26.4.1).
 - Single target `sift`. SPM dependencies: WhisperKit (from `https://github.com/argmaxinc/WhisperKit.git`), GoogleGenerativeAI (from `https://github.com/google-gemini/generative-ai-swift.git`), and Yams (from `https://github.com/jpsim/Yams.git`).
 - CLI build: `xcodebuild -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`
-- CLI test (all): `xcodebuild test -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
+- CLI test (fast, no simulator): `xcodebuild test -scheme sift -destination 'platform=macOS,variant=Mac Catalyst' -only-testing:siftTests -skip-testing:siftTests/GeminiBenchmark -enableCodeCoverage NO` (~9s warm)
+- CLI test (all, iOS simulator): `xcodebuild test -project sift.xcodeproj -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 - CLI test (unit/integration only, skip slow UI): append ` -skip-testing:siftUITests`
 - Benchmark (Gemini latency, opt-in): `./scripts/run-benchmark.sh` — see `/docs/testing.md` for details.
 - No CI, no lint config yet.
@@ -142,8 +143,8 @@ siftUITests/
   - Tests use Swift Testing (`import Testing`) — not XCTest — except UI tests which use XCTest (`import XCTest`) for `XCUIApplication`.
   - Integration tests use in-memory SwiftData (`ModelConfiguration(isStoredInMemoryOnly: true)`); never write to disk.
   - Test file organization mirrors source: `siftTests/Models/`, `siftTests/ViewModels/`, etc.
-  - Run `xcodebuild test` before committing. A commit that breaks tests is invalid.
-  - For fast feedback during development, skip the slow UI tests: `xcodebuild test ... -skip-testing:siftUITests`
+  - Run the Mac Catalyst command before committing — it is the default: `xcodebuild test -scheme sift -destination 'platform=macOS,variant=Mac Catalyst' -only-testing:siftTests -skip-testing:siftTests/GeminiBenchmark -enableCodeCoverage NO`. A commit that breaks tests is invalid.
+  - Run the iOS Simulator command occasionally (before releases, or when investigating a platform-specific failure): `xcodebuild test -scheme sift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -skip-testing:siftUITests`
   - After every test run, display a per-file coverage summary: `echo '{"tool_input":{"command":"xcodebuild test"}}' | python3 scripts/coverage-report.py`
   - See `/docs/testing.md` for detailed patterns and the test pyramid.
 - **Actor isolation**: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` is set. Types default to `@MainActor` unless explicitly annotated otherwise.

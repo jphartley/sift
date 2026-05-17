@@ -75,9 +75,11 @@ enum RecordingScreenRecordingStartup {
     static let status = "Getting microphone ready..."
 }
 
+#if !targetEnvironment(macCatalyst)
 enum RecordingScreenSettings {
     static let appSettingsURL = URL(string: UIApplication.openSettingsURLString)
 }
+#endif
 
 struct RecordingScreen: View {
     @Environment(\.modelContext) private var modelContext
@@ -465,9 +467,11 @@ struct RecordingScreen: View {
     private func handleRecoveryAction(_ action: CheckInRecoveryPresentation.Action) {
         switch action {
         case .openSettings:
+            #if !targetEnvironment(macCatalyst)
             if let url = RecordingScreenSettings.appSettingsURL {
                 UIApplication.shared.open(url)
             }
+            #endif
         case .tryAgain:
             _ = viewModel.retryPermission()
         case .retryModelLoading:

@@ -451,3 +451,14 @@ The system SHALL have direct unit tests for `AudioRecorderService` that do not r
 - **WHEN** automated tests verify `stopRecording()` behavior
 - **THEN** the tests SHALL assert that `isRecording` is false after stop
 - **THEN** the tests SHALL assert that calling `stopRecording()` on an idle instance does not throw
+
+### Requirement: Test suite can be invoked without a simulator
+The automated test documentation SHALL include a macOS/Catalyst invocation as the preferred fast-feedback command.
+
+#### Scenario: AGENTS.md documents the Catalyst test command
+- **WHEN** a developer reads the Build & run section of AGENTS.md
+- **THEN** they SHALL find a `xcodebuild test` command targeting `platform=macOS,variant=Mac Catalyst`
+
+#### Scenario: docs/testing.md documents expected Catalyst run time
+- **WHEN** a developer reads the Running tests section of docs/testing.md
+- **THEN** they SHALL find the Catalyst destination command alongside the existing simulator command
