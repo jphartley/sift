@@ -135,7 +135,7 @@ final class IntakeViewModel {
     }
 
     func nextPrimary() {
-        guard !isTranscribing else { return }
+        guard !isTranscribing, !isRecordingVoiceAnswer else { return }
         guard case .primary(let index) = step else { return }
         let next = index + 1
         if next < IntakeCopy.primaryPrompts.count {
@@ -158,7 +158,7 @@ final class IntakeViewModel {
     }
 
     func nextOptional() -> Task<Void, Never>? {
-        guard !isTranscribing else { return nil }
+        guard !isTranscribing, !isRecordingVoiceAnswer else { return nil }
         guard case .optional(let index) = step else { return nil }
         let next = index + 1
         if next < IntakeCopy.optionalPrompts.count {

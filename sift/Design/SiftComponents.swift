@@ -50,6 +50,7 @@ struct PillTag: View {
 
 struct PrimaryButtonStyle: ButtonStyle {
     var soft: Bool = false
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -68,7 +69,7 @@ struct PrimaryButtonStyle: ButtonStyle {
                 color: soft ? .clear : SiftColor.accent.opacity(0.18),
                 radius: 16, x: 0, y: 6
             )
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.4)
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: configuration.isPressed)
     }
 }

@@ -90,7 +90,7 @@ struct IntakeScreen: View {
                     .buttonStyle(GhostButtonStyle())
                     Button(IntakeCopy.nextAction) { advance(prompt: prompt) }
                         .buttonStyle(PrimaryButtonStyle())
-                        .disabled(viewModel.isTranscribing)
+                        .disabled(viewModel.isTranscribing || viewModel.isRecordingVoiceAnswer)
                 }
             }
             .padding(.horizontal, SiftSpace.gutter)

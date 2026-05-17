@@ -310,6 +310,50 @@ struct IntakeViewModelTests {
 
         #expect(viewModel.step == .optional(0))
     }
+
+    @Test func nextPrimaryIsBlockedWhileRecording() async {
+        let recorder = FakeIntakeAudioRecorder()
+        let client = ControllableFakeTranscriptionClient()
+        let viewModel = IntakeViewModel()
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            transcriptionService: client,
+            audioRecorder: recorder
+        )
+        viewModel.begin()
+        #expect(viewModel.step == .primary(0))
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+        #expect(viewModel.isRecordingVoiceAnswer)
+
+        viewModel.nextPrimary()
+
+        #expect(viewModel.step == .primary(0))
+    }
+
+    @Test func nextOptionalIsBlockedWhileRecording() async {
+        let recorder = FakeIntakeAudioRecorder()
+        let client = ControllableFakeTranscriptionClient()
+        let viewModel = IntakeViewModel()
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            transcriptionService: client,
+            audioRecorder: recorder
+        )
+        viewModel.begin()
+        viewModel.nextPrimary()
+        viewModel.nextPrimary()
+        viewModel.nextPrimary()
+        viewModel.acceptOptionalTuning()
+        #expect(viewModel.step == .optional(0))
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+        #expect(viewModel.isRecordingVoiceAnswer)
+
+        _ = viewModel.nextOptional()
+
+        #expect(viewModel.step == .optional(0))
+    }
 }
 
 @MainActor
