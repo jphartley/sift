@@ -106,6 +106,29 @@ While a voice answer transcription is in progress on any intake prompt, the syst
 - **WHEN** the user chooses to continue without a transcript
 - **THEN** the system SHALL advance to the next prompt without persisting a transcript for the current prompt
 
+### Requirement: Intake keeps the screen awake while voice answers are active
+The system SHALL prevent the device screen from sleeping while an active voice answer is being recorded during intake. The system SHALL restore normal idle behavior once the voice answer stops, the current prompt is skipped, or the intake screen is torn down.
+
+#### Scenario: Active voice answer keeps the device awake
+- **WHEN** the user is actively recording a voice answer on an intake prompt
+- **THEN** the system SHALL keep the screen awake for the duration of that recording
+
+#### Scenario: Voice answer stop restores normal idle behavior
+- **WHEN** the user stops a voice answer recording
+- **THEN** the system SHALL restore normal idle timer behavior
+
+#### Scenario: Skipping a prompt restores normal idle behavior
+- **WHEN** the user skips the current intake prompt while a voice answer is active
+- **THEN** the system SHALL restore normal idle timer behavior
+
+#### Scenario: Intake teardown restores normal idle behavior
+- **WHEN** the intake screen disappears while a voice answer is active
+- **THEN** the system SHALL restore normal idle timer behavior
+
+#### Scenario: Recording startup failure does not keep the screen awake
+- **WHEN** microphone permission is denied or recorder startup fails before the intake voice answer becomes active
+- **THEN** the system SHALL keep normal idle timer behavior
+
 ### Requirement: Intake uses approved product language
 The first-time intake SHALL use the approved product language for its introduction, primary prompts, optional deeper tuning prompt, optional prompts, chip labels, selected-item labels, action labels, and voice hints.
 

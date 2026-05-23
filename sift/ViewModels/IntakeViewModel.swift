@@ -10,6 +10,22 @@ enum IntakeStep: Equatable {
     case complete
 }
 
+enum IntakeMode: Equatable {
+    case firstTime
+    case restartFromSkipped
+    case restartFromCompleted
+
+    static func restartMode(for profile: UserPracticeProfile?) -> IntakeMode? {
+        guard let profile else { return nil }
+        switch profile.completionState {
+        case .skipped:
+            return .restartFromSkipped
+        case .completed:
+            return .restartFromCompleted
+        }
+    }
+}
+
 @Observable
 final class IntakeViewModel {
     var step: IntakeStep = .introduction
@@ -20,26 +36,34 @@ final class IntakeViewModel {
     var isTranscribing = false
     var transcriptionError: String?
     var sentimentSheetPracticeID: String?
+    var mode: IntakeMode = .firstTime
 
     private var profileStore: UserPracticeProfileStore?
     private var analyzer: IntakeAnalyzing
     private var audioRecorder: AudioRecording?
+    private let screenIdleController: ScreenIdleControlling
     private var transcriptionService: TranscriptionClient?
     private var currentRecordingURL: URL?
     private var optionalTuningCompleted = false
     private var transcriptionTask: Task<Void, Never>?
 
-    init(analyzer: IntakeAnalyzing = LocalIntakeAnalyzer()) {
+    init(
+        analyzer: IntakeAnalyzing = LocalIntakeAnalyzer(),
+        screenIdleController: ScreenIdleControlling = SystemScreenIdleController()
+    ) {
         self.analyzer = analyzer
+        self.screenIdleController = screenIdleController
     }
 
     func configure(
         profileStore: UserPracticeProfileStore,
+        mode: IntakeMode = .firstTime,
         transcriptionService: TranscriptionClient? = nil,
         audioRecorder: AudioRecording? = nil,
         analyzer: IntakeAnalyzing? = nil
     ) {
         self.profileStore = profileStore
+        self.mode = mode
         self.transcriptionService = transcriptionService
         self.audioRecorder = audioRecorder
         if let analyzer {
@@ -53,7 +77,9 @@ final class IntakeViewModel {
 
     func skipIntake() {
         do {
-            try profileStore?.markSkipped()
+            if mode != .restartFromCompleted {
+                try profileStore?.markSkipped()
+            }
             didFinish = true
             step = .complete
         } catch {
@@ -63,7 +89,9 @@ final class IntakeViewModel {
 
     func continueWithoutAnalysis() {
         do {
-            try profileStore?.markSkipped()
+            if mode != .restartFromCompleted {
+                try profileStore?.markSkipped()
+            }
         } catch {
             step = .complete
             didFinish = true
@@ -191,7 +219,9 @@ final class IntakeViewModel {
                 currentRecordingURL = try audioRecorder.startRecording()
                 voiceCapturePromptID = promptID
                 isRecordingVoiceAnswer = true
+                setScreenIdleDisabled(true)
             } catch {
+                setScreenIdleDisabled(false)
                 step = .error("Sift could not start recording that answer.")
             }
         }
@@ -199,15 +229,17 @@ final class IntakeViewModel {
     }
 
     func stopVoiceAnswer() -> Task<Void, Never>? {
-        guard let transcriptionService,
-              let recordingURL = currentRecordingURL,
-              let promptID = voiceCapturePromptID else {
-            audioRecorder?.stopRecording()
-            isRecordingVoiceAnswer = false
-            return nil
-        }
+        let recordingURL = currentRecordingURL
+        let promptID = voiceCapturePromptID
         audioRecorder?.stopRecording()
         isRecordingVoiceAnswer = false
+        setScreenIdleDisabled(false)
+
+        guard let transcriptionService,
+              let recordingURL,
+              let promptID else {
+            return nil
+        }
         isTranscribing = true
         transcriptionError = nil
         let task = Task { @MainActor in
@@ -238,9 +270,14 @@ final class IntakeViewModel {
     }
 
     func cancelTranscription() {
+        let hadActiveVoiceAnswer = isRecordingVoiceAnswer || isTranscribing || currentRecordingURL != nil || transcriptionTask != nil
         transcriptionTask?.cancel()
         transcriptionTask = nil
-        if isTranscribing {
+        if audioRecorder?.isRecording == true {
+            audioRecorder?.stopRecording()
+        }
+        if isRecordingVoiceAnswer || isTranscribing {
+            isRecordingVoiceAnswer = false
             isTranscribing = false
             if let url = currentRecordingURL {
                 try? FileManager.default.removeItem(at: url)
@@ -248,7 +285,14 @@ final class IntakeViewModel {
             currentRecordingURL = nil
             voiceCapturePromptID = nil
         }
+        if hadActiveVoiceAnswer {
+            setScreenIdleDisabled(false)
+        }
         transcriptionError = nil
+    }
+
+    func tearDown() {
+        cancelTranscription()
     }
 
     func prompt(for step: IntakeStep) -> IntakePrompt? {
@@ -285,5 +329,9 @@ final class IntakeViewModel {
                 step = .error("Sift could not save that context yet.")
             }
         }
+    }
+
+    private func setScreenIdleDisabled(_ disabled: Bool) {
+        screenIdleController.setIdleTimerDisabled(disabled)
     }
 }

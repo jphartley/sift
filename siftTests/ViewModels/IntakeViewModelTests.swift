@@ -5,6 +5,20 @@ import Testing
 @MainActor
 struct IntakeViewModelTests {
 
+    private func makeViewModel(
+        recorder: FakeIntakeAudioRecorder = FakeIntakeAudioRecorder(),
+        transcriptionClient: TranscriptionClient? = nil,
+        screenIdleController: ScreenIdleControlling = FakeScreenIdleController()
+    ) -> (IntakeViewModel, FakeIntakeAudioRecorder, ScreenIdleControlling) {
+        let viewModel = IntakeViewModel(screenIdleController: screenIdleController)
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            transcriptionService: transcriptionClient,
+            audioRecorder: recorder
+        )
+        return (viewModel, recorder, screenIdleController)
+    }
+
     @Test func noPreferenceIsMutuallyExclusive() {
         let viewModel = IntakeViewModel()
         let prompt = IntakeCopy.primaryPrompts[2]
@@ -28,6 +42,135 @@ struct IntakeViewModelTests {
         viewModel.skipIntake()
 
         #expect(store.didMarkSkipped)
+        #expect(viewModel.didFinish)
+        #expect(viewModel.step == .complete)
+    }
+
+    @Test func skippedRestartSkipPersistsSkippedProfile() {
+        let store = FakeProfileStore(savedProfile: .skipped())
+        let viewModel = IntakeViewModel()
+        viewModel.configure(profileStore: store, mode: .restartFromSkipped)
+
+        viewModel.skipIntake()
+
+        #expect(store.didMarkSkipped)
+        #expect(store.savedProfile?.completionState == .skipped)
+        #expect(viewModel.didFinish)
+        #expect(viewModel.step == .complete)
+    }
+
+    @Test func skippedRestartContinueWithoutAnalysisPersistsSkippedProfile() {
+        let store = FakeProfileStore(savedProfile: .skipped())
+        let viewModel = IntakeViewModel()
+        viewModel.configure(profileStore: store, mode: .restartFromSkipped)
+
+        viewModel.continueWithoutAnalysis()
+
+        #expect(store.didMarkSkipped)
+        #expect(store.savedProfile?.completionState == .skipped)
+        #expect(viewModel.didFinish)
+        #expect(viewModel.step == .complete)
+    }
+
+    @Test func completedRestartSkipPreservesExistingProfile() throws {
+        let existing = UserPracticeProfile(
+            completionState: .completed,
+            desiredSupportAreas: ["Existing support"]
+        )
+        let store = FakeProfileStore(savedProfile: existing)
+        let viewModel = IntakeViewModel()
+        viewModel.configure(profileStore: store, mode: .restartFromCompleted)
+
+        viewModel.skipIntake()
+
+        #expect(!store.didMarkSkipped)
+        let saved = try #require(store.savedProfile)
+        #expect(saved === existing)
+        #expect(saved.desiredSupportAreas == ["Existing support"])
+        #expect(viewModel.didFinish)
+        #expect(viewModel.step == .complete)
+    }
+
+    @Test func completedRestartContinueWithoutAnalysisPreservesExistingProfile() throws {
+        let existing = UserPracticeProfile(
+            completionState: .completed,
+            desiredSupportAreas: ["Existing support"]
+        )
+        let store = FakeProfileStore(savedProfile: existing)
+        let viewModel = IntakeViewModel()
+        viewModel.configure(profileStore: store, mode: .restartFromCompleted)
+
+        viewModel.continueWithoutAnalysis()
+
+        #expect(!store.didMarkSkipped)
+        let saved = try #require(store.savedProfile)
+        #expect(saved === existing)
+        #expect(saved.desiredSupportAreas == ["Existing support"])
+        #expect(viewModel.didFinish)
+        #expect(viewModel.step == .complete)
+    }
+
+    @Test func completedRestartAbandonPreservesExistingProfile() throws {
+        let existing = UserPracticeProfile(
+            completionState: .completed,
+            desiredSupportAreas: ["Existing support"]
+        )
+        let store = FakeProfileStore(savedProfile: existing)
+        let viewModel = IntakeViewModel()
+        viewModel.configure(profileStore: store, mode: .restartFromCompleted)
+
+        viewModel.begin()
+        viewModel.nextPrimary()
+        viewModel.tearDown()
+
+        #expect(!store.didMarkSkipped)
+        let saved = try #require(store.savedProfile)
+        #expect(saved === existing)
+        #expect(!viewModel.didFinish)
+    }
+
+    @Test func completedRestartSuccessfulAnalysisReplacesExistingProfile() async throws {
+        let existing = UserPracticeProfile(
+            completionState: .completed,
+            desiredSupportAreas: ["Existing support"]
+        )
+        let store = FakeProfileStore(savedProfile: existing)
+        let analyzer = FakeIntakeAnalyzer(result: UserPracticeProfile(
+            completionState: .completed,
+            desiredSupportAreas: ["New support"]
+        ))
+        let viewModel = IntakeViewModel()
+        viewModel.configure(profileStore: store, mode: .restartFromCompleted, analyzer: analyzer)
+
+        let task = viewModel.declineOptionalTuning()
+        await task.value
+
+        let saved = try #require(store.savedProfile)
+        #expect(saved !== existing)
+        #expect(saved.completionState == .completed)
+        #expect(saved.desiredSupportAreas == ["New support"])
+        #expect(viewModel.didFinish)
+        #expect(viewModel.step == .complete)
+    }
+
+    @Test func completedRestartAnalysisFailureThenContinuePreservesExistingProfile() async throws {
+        let existing = UserPracticeProfile(
+            completionState: .completed,
+            desiredSupportAreas: ["Existing support"]
+        )
+        let store = FakeProfileStore(savedProfile: existing)
+        let analyzer = FakeIntakeAnalyzer(error: IntakeAnalysisError.failed)
+        let viewModel = IntakeViewModel()
+        viewModel.configure(profileStore: store, mode: .restartFromCompleted, analyzer: analyzer)
+
+        let task = viewModel.declineOptionalTuning()
+        await task.value
+        viewModel.continueWithoutAnalysis()
+
+        #expect(!store.didMarkSkipped)
+        let saved = try #require(store.savedProfile)
+        #expect(saved === existing)
+        #expect(saved.desiredSupportAreas == ["Existing support"])
         #expect(viewModel.didFinish)
         #expect(viewModel.step == .complete)
     }
@@ -198,6 +341,84 @@ struct IntakeViewModelTests {
         #expect(viewModel.transcriptionError == nil)
     }
 
+    @Test func startVoiceAnswerEnablesScreenAwakeAfterRecorderStartupSucceeds() async {
+        let (viewModel, _, screenIdleController) = makeViewModel()
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+
+        let fakeIdle = screenIdleController as? FakeScreenIdleController
+        #expect(fakeIdle?.calls == [true])
+        #expect(fakeIdle?.isIdleTimerDisabled == true)
+        #expect(viewModel.isRecordingVoiceAnswer)
+    }
+
+    @Test func stopVoiceAnswerRestoresScreenIdleBehaviorBeforeTranscriptionCompletes() async {
+        let recorder = FakeIntakeAudioRecorder()
+        let client = ControllableFakeTranscriptionClient()
+        let screenIdleController = FakeScreenIdleController()
+        let viewModel = IntakeViewModel(screenIdleController: screenIdleController)
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            transcriptionService: client,
+            audioRecorder: recorder
+        )
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+        let stopTask = viewModel.stopVoiceAnswer()
+
+        let fakeIdle = screenIdleController as? FakeScreenIdleController
+        #expect(viewModel.isTranscribing)
+        #expect(fakeIdle?.isIdleTimerDisabled == false)
+
+        client.finish(text: "I want calm.")
+        await stopTask?.value
+
+        #expect(fakeIdle?.calls == [true, false])
+        #expect(fakeIdle?.isIdleTimerDisabled == false)
+    }
+
+    @Test func skipCurrentPromptStopsActiveRecordingAndRestoresScreenIdleBehavior() async {
+        let recorder = FakeIntakeAudioRecorder()
+        let screenIdleController = FakeScreenIdleController()
+        let viewModel = IntakeViewModel(screenIdleController: screenIdleController)
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            audioRecorder: recorder
+        )
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+        #expect(viewModel.isRecordingVoiceAnswer)
+
+        viewModel.skipCurrentPrompt()
+
+        let fakeIdle = screenIdleController as? FakeScreenIdleController
+        #expect(!viewModel.isRecordingVoiceAnswer)
+        #expect(!viewModel.isTranscribing)
+        #expect(recorder.didStopRecording)
+        #expect(fakeIdle?.isIdleTimerDisabled == false)
+        #expect(fakeIdle?.calls == [true, false])
+    }
+
+    @Test func tearDownDuringRecordingStopsRecorderAndRestoresScreenIdleBehavior() async {
+        let recorder = FakeIntakeAudioRecorder()
+        let screenIdleController = FakeScreenIdleController()
+        let viewModel = IntakeViewModel(screenIdleController: screenIdleController)
+        viewModel.configure(
+            profileStore: FakeProfileStore(),
+            audioRecorder: recorder
+        )
+
+        await viewModel.startVoiceAnswer(for: .desiredSupport)?.value
+        viewModel.tearDown()
+
+        let fakeIdle = screenIdleController as? FakeScreenIdleController
+        #expect(recorder.didStopRecording)
+        #expect(!viewModel.isRecordingVoiceAnswer)
+        #expect(!viewModel.isTranscribing)
+        #expect(fakeIdle?.isIdleTimerDisabled == false)
+        #expect(fakeIdle?.calls == [true, false])
+    }
+
     @Test func skipCurrentPromptCancelsInFlightTranscription() async {
         let recorder = FakeIntakeAudioRecorder()
         let client = ControllableFakeTranscriptionClient()
@@ -361,6 +582,10 @@ private final class FakeProfileStore: UserPracticeProfileStore {
     var savedProfile: UserPracticeProfile?
     var didMarkSkipped = false
 
+    init(savedProfile: UserPracticeProfile? = nil) {
+        self.savedProfile = savedProfile
+    }
+
     func currentProfile() throws -> UserPracticeProfile? {
         savedProfile
     }
@@ -400,6 +625,7 @@ private final class FakeIntakeAudioRecorder: AudioRecording {
     var isRecording = false
     var recordingDuration: TimeInterval = 0
     var audioLevel: Float = 0
+    var didStopRecording = false
     private let url: URL
 
     init(url: URL = URL(fileURLWithPath: "/tmp/fake-intake-recording.wav")) {
@@ -414,6 +640,7 @@ private final class FakeIntakeAudioRecorder: AudioRecording {
     }
 
     func stopRecording() {
+        didStopRecording = true
         isRecording = false
     }
 }
@@ -457,4 +684,14 @@ private final class ControllableFakeTranscriptionClient: TranscriptionClient, @u
 
 private enum SampleTranscriptionError: Error {
     case boom
+}
+
+private final class FakeScreenIdleController: ScreenIdleControlling {
+    private(set) var calls: [Bool] = []
+    private(set) var isIdleTimerDisabled = false
+
+    func setIdleTimerDisabled(_ disabled: Bool) {
+        calls.append(disabled)
+        isIdleTimerDisabled = disabled
+    }
 }

@@ -5,7 +5,14 @@ struct IntakeScreen: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(TranscriptionService.self) private var transcriptionService
     @Environment(AudioRecorderService.self) private var audioRecorderService
+    let mode: IntakeMode
+    let onFinish: () -> Void
     @State private var viewModel = IntakeViewModel()
+
+    init(mode: IntakeMode = .firstTime, onFinish: @escaping () -> Void = {}) {
+        self.mode = mode
+        self.onFinish = onFinish
+    }
 
     var body: some View {
         Group {
@@ -29,9 +36,18 @@ struct IntakeScreen: View {
         .task {
             viewModel.configure(
                 profileStore: SwiftDataUserPracticeProfileStore(modelContext: modelContext),
+                mode: mode,
                 transcriptionService: transcriptionService,
                 audioRecorder: audioRecorderService
             )
+        }
+        .onChange(of: viewModel.didFinish) { _, didFinish in
+            if didFinish {
+                onFinish()
+            }
+        }
+        .onDisappear {
+            viewModel.tearDown()
         }
     }
 
@@ -369,7 +385,7 @@ struct IntakeScreen: View {
                 VStack(spacing: 12) {
                     Button(IntakeCopy.answerMoreAction) { viewModel.acceptOptionalTuning() }
                         .buttonStyle(PrimaryButtonStyle())
-                    Button(IntakeCopy.beginCheckInAction) { viewModel.declineOptionalTuning() }
+                    Button(IntakeCopy.beginCheckInAction) { _ = viewModel.declineOptionalTuning() }
                         .buttonStyle(GhostButtonStyle())
                 }
             }
@@ -399,7 +415,7 @@ struct IntakeScreen: View {
                     .font(SiftFont.body)
                     .foregroundStyle(SiftColor.muted)
                     .multilineTextAlignment(.center)
-                Button(IntakeCopy.retryAction) { viewModel.retryAnalysis() }
+                Button(IntakeCopy.retryAction) { _ = viewModel.retryAnalysis() }
                     .buttonStyle(PrimaryButtonStyle())
                 Button(IntakeCopy.continueWithoutAnalysisAction) { viewModel.continueWithoutAnalysis() }
                     .buttonStyle(GhostButtonStyle())
