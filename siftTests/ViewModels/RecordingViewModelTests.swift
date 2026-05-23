@@ -14,13 +14,17 @@ struct RecordingViewModelTests {
         transcriptionClient: FakeTranscriptionClient? = nil,
         recommendationClient: RecommendationClient? = nil,
         sessionStore: FakeSessionStore? = nil,
-        profileStore: UserPracticeProfileStore? = nil
+        profileStore: UserPracticeProfileStore? = nil,
+        screenIdleController: ScreenIdleControlling? = nil
     ) -> (RecordingViewModel, FakeAudioRecorder, FakeTranscriptionClient, RecommendationClient, FakeSessionStore) {
         let audioRecorder = audioRecorder ?? FakeAudioRecorder()
         let transcriptionClient = transcriptionClient ?? FakeTranscriptionClient()
         let recommendationClient = recommendationClient ?? FakeRecommendationClient()
         let sessionStore = sessionStore ?? FakeSessionStore()
-        let viewModel = RecordingViewModel(audioRecorder: audioRecorder)
+        let viewModel = RecordingViewModel(
+            audioRecorder: audioRecorder,
+            screenIdleController: screenIdleController ?? SystemScreenIdleController()
+        )
         viewModel.configure(
             sessionStore: sessionStore,
             transcriptionService: transcriptionClient,
@@ -81,6 +85,26 @@ struct RecordingViewModelTests {
         #expect(audioRecorder.startRecordingCount == 1)
     }
 
+    @Test func startRecordingEnablesScreenAwakeAfterRecorderStartupSucceeds() async {
+        let screenIdleController = FakeScreenIdleController()
+        let audioRecorder = FakeAudioRecorder(permissionDelay: .milliseconds(50))
+        let (viewModel, _, _, _, _) = makeViewModel(
+            audioRecorder: audioRecorder,
+            screenIdleController: screenIdleController
+        )
+        viewModel.state = .ready
+
+        let task = viewModel.startRecording()
+
+        #expect(screenIdleController.isIdleTimerDisabled == false)
+
+        await task?.value
+
+        #expect(screenIdleController.isIdleTimerDisabled == true)
+        #expect(screenIdleController.calls == [true])
+        #expect(viewModel.state == .recording)
+    }
+
     @Test func repeatedStartRecordingWhilePreparingDoesNotOverlapStartup() async {
         let audioRecorder = FakeAudioRecorder(permissionDelay: .milliseconds(50))
         let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
@@ -101,7 +125,11 @@ struct RecordingViewModelTests {
 
     @Test func permissionDeniedDuringRecordingStartupShowsRecovery() async {
         let audioRecorder = FakeAudioRecorder(permissionGranted: false, permissionDelay: .milliseconds(10))
-        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        let screenIdleController = FakeScreenIdleController()
+        let (viewModel, _, _, _, _) = makeViewModel(
+            audioRecorder: audioRecorder,
+            screenIdleController: screenIdleController
+        )
         viewModel.state = .ready
 
         let task = viewModel.startRecording()
@@ -112,6 +140,25 @@ struct RecordingViewModelTests {
 
         #expect(viewModel.state == .recovery(.microphonePermissionDenied))
         #expect(audioRecorder.startRecordingCount == 0)
+        #expect(screenIdleController.isIdleTimerDisabled == false)
+        #expect(screenIdleController.calls == [false])
+    }
+
+    @Test func recorderStartupFailureRestoresScreenIdleBehavior() async {
+        let audioRecorder = FakeAudioRecorder(startError: TestError.saveFailed)
+        let screenIdleController = FakeScreenIdleController()
+        let (viewModel, _, _, _, _) = makeViewModel(
+            audioRecorder: audioRecorder,
+            screenIdleController: screenIdleController
+        )
+        viewModel.state = .ready
+
+        let task = viewModel.startRecording()
+        await task?.value
+
+        #expect(viewModel.state == .recovery(.emptySpeech))
+        #expect(screenIdleController.isIdleTimerDisabled == false)
+        #expect(screenIdleController.calls == [false])
     }
 
     @Test func stopRecordingTranscribesAndShowsSuggestions() async {
@@ -277,6 +324,31 @@ struct RecordingViewModelTests {
         #expect(viewModel.audioLevel == -24)
     }
 
+    @Test func stopRecordingRestoresScreenIdleBehaviorBeforeTranscriptionCompletes() async {
+        let screenIdleController = FakeScreenIdleController()
+        let transcriptionClient = FakeTranscriptionClient(
+            text: "I feel anxious",
+            durationMs: 123,
+            transcriptionDelay: .milliseconds(100)
+        )
+        let (viewModel, _, _, _, _) = makeViewModel(
+            transcriptionClient: transcriptionClient,
+            screenIdleController: screenIdleController
+        )
+        viewModel.state = .ready
+
+        await startRecording(viewModel)
+        let task = viewModel.stopRecording()
+
+        #expect(screenIdleController.isIdleTimerDisabled == false)
+        #expect(viewModel.state == .transcribing)
+
+        await task?.value
+
+        #expect(screenIdleController.isIdleTimerDisabled == false)
+        #expect(screenIdleController.calls == [true, false])
+    }
+
     @Test func retryAnalysisIgnoresEarlierInFlightResult() async {
         let recommendationClient = ControlledRecommendationClient()
         let (viewModel, _, _, _, _) = makeViewModel(recommendationClient: recommendationClient)
@@ -339,7 +411,11 @@ struct RecordingViewModelTests {
 
     @Test func tearDownDuringRecordingStopsRecorderAndCancelsMeterPolling() async {
         let audioRecorder = FakeAudioRecorder(keepsRecordingAfterStop: true)
-        let (viewModel, _, _, _, _) = makeViewModel(audioRecorder: audioRecorder)
+        let screenIdleController = FakeScreenIdleController()
+        let (viewModel, _, _, _, _) = makeViewModel(
+            audioRecorder: audioRecorder,
+            screenIdleController: screenIdleController
+        )
         viewModel.state = .ready
 
         await startRecording(viewModel)
@@ -354,6 +430,8 @@ struct RecordingViewModelTests {
         #expect(audioRecorder.didStopRecording)
         #expect(viewModel.recordingDuration == 4.2)
         #expect(viewModel.audioLevel == -24)
+        #expect(screenIdleController.isIdleTimerDisabled == false)
+        #expect(screenIdleController.calls == [true, false])
     }
 
     @Test func selectPracticeOpensPracticeDetailWithoutLoggingAttempt() {
@@ -771,18 +849,38 @@ private final class FakeTranscriptionClient: TranscriptionClient {
 
     private let text: String
     private let durationMs: Int
+    private let transcriptionDelay: Duration?
     private let error: Error?
 
-    init(text: String = "I feel anxious", durationMs: Int = 100, error: Error? = nil) {
+    init(
+        text: String = "I feel anxious",
+        durationMs: Int = 100,
+        transcriptionDelay: Duration? = nil,
+        error: Error? = nil
+    ) {
         self.text = text
         self.durationMs = durationMs
+        self.transcriptionDelay = transcriptionDelay
         self.error = error
     }
 
     func transcribe(audioURL: URL) async throws -> (text: String, durationMs: Int) {
         if let error { throw error }
+        if let transcriptionDelay {
+            try? await Task.sleep(for: transcriptionDelay)
+        }
         transcribedURL = audioURL
         return (text, durationMs)
+    }
+}
+
+private final class FakeScreenIdleController: ScreenIdleControlling {
+    private(set) var calls: [Bool] = []
+    private(set) var isIdleTimerDisabled = false
+
+    func setIdleTimerDisabled(_ disabled: Bool) {
+        calls.append(disabled)
+        isIdleTimerDisabled = disabled
     }
 }
 

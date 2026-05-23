@@ -23,6 +23,7 @@ final class RecordingViewModel {
     var lastTranscript: String = ""
 
     private var audioRecorder: AudioRecording
+    private let screenIdleController: ScreenIdleControlling
     private var transcriptionService: TranscriptionClient?
     private var recommendationClient: RecommendationClient?
     private var sessionStore: SessionStore?
@@ -36,8 +37,12 @@ final class RecordingViewModel {
     var currentAttempt: PracticeAttempt?
     var lastRecommendationResult: RecommendationResult?
 
-    init(audioRecorder: AudioRecording = AudioRecorderService()) {
+    init(
+        audioRecorder: AudioRecording = AudioRecorderService(),
+        screenIdleController: ScreenIdleControlling = SystemScreenIdleController()
+    ) {
         self.audioRecorder = audioRecorder
+        self.screenIdleController = screenIdleController
     }
 
     func configure(
@@ -87,6 +92,7 @@ final class RecordingViewModel {
             guard hasPermission else {
                 cancelMeterPolling()
                 recordingStartupTask = nil
+                setScreenIdleDisabled(false)
                 state = .recovery(.microphonePermissionDenied)
                 return
             }
@@ -94,9 +100,11 @@ final class RecordingViewModel {
             do {
                 currentRecordingURL = try audioRecorder.startRecording()
                 state = .recording
+                setScreenIdleDisabled(true)
                 startMeterPolling()
             } catch {
                 cancelMeterPolling()
+                setScreenIdleDisabled(false)
                 state = .recovery(.emptySpeech)
             }
 
@@ -108,6 +116,7 @@ final class RecordingViewModel {
 
     @discardableResult
     func stopRecording() -> Task<Void, Never>? {
+        setScreenIdleDisabled(false)
         audioRecorder.stopRecording()
         cancelMeterPolling()
         let audioDuration = recordingDuration
@@ -258,6 +267,7 @@ final class RecordingViewModel {
     }
 
     func tearDown() {
+        setScreenIdleDisabled(false)
         if audioRecorder.isRecording {
             audioRecorder.stopRecording()
         }
@@ -274,6 +284,7 @@ final class RecordingViewModel {
     }
 
     func recordAgain() {
+        setScreenIdleDisabled(false)
         pendingSession = nil
         currentAttempt = nil
         currentRecordingURL = nil
@@ -348,6 +359,7 @@ final class RecordingViewModel {
     }
 
     private func resetAfterSave() {
+        setScreenIdleDisabled(false)
         pendingSession = nil
         currentAttempt = nil
         recordingDuration = 0
@@ -386,5 +398,9 @@ final class RecordingViewModel {
         analysisTask?.cancel()
         analysisTask = nil
         analysisTaskID = nil
+    }
+
+    private func setScreenIdleDisabled(_ disabled: Bool) {
+        screenIdleController.setIdleTimerDisabled(disabled)
     }
 }

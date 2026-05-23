@@ -1,5 +1,8 @@
 import Foundation
 import SwiftData
+#if canImport(UIKit)
+import UIKit
+#endif
 
 protocol AudioRecording: AnyObject {
     var isRecording: Bool { get }
@@ -19,6 +22,18 @@ protocol TranscriptionClient: AnyObject {
 
 protocol RecommendationClient: AnyObject {
     func recommend(transcript: String, history: [SessionHistoryEntry], profile: UserPracticeProfile?) async throws -> RecommendationResult
+}
+
+protocol ScreenIdleControlling: AnyObject {
+    func setIdleTimerDisabled(_ disabled: Bool)
+}
+
+final class SystemScreenIdleController: ScreenIdleControlling {
+    func setIdleTimerDisabled(_ disabled: Bool) {
+        #if canImport(UIKit) && !targetEnvironment(macCatalyst)
+        UIApplication.shared.isIdleTimerDisabled = disabled
+        #endif
+    }
 }
 
 protocol SessionStore: AnyObject {
